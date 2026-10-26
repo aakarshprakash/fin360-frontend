@@ -28,13 +28,13 @@ export async function loadInvoicePrintData() {
 }
 
 // Print-window CSS. A zero @page margin stops the browser from printing its own
-// header/footer (date, page title, about:blank, page count); the page padding
-// is applied to the invoice itself instead.
+// header/footer (date, page title, about:blank, page count); the invoice sheet
+// (.inv-doc) carries its own A4 margins.
 export const PRINT_PAGE_CSS = `
   @page { size: A4; margin: 0; }
   @media print {
     html, body { background: #fff; }
-    .inv-print { box-shadow: none; margin: 0; padding: 12mm 14mm !important; border-radius: 0; max-width: 100%; }
+    .inv-print { box-shadow: none; margin: 0; border-radius: 0; }
     .no-print { display: none !important; }
   }
 `;

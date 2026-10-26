@@ -14,7 +14,7 @@ import { INVOICE_TEMPLATES } from '../../components/accounting/invoiceTemplates'
 const PREVIEW_INVOICE = {
   invoiceNumber: 'INV-00001', date: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 864e5).toISOString(),
   customer: 'Sample Customer Pvt Ltd', customerAddress: 'MG Road, Kochi', customerPhone: '98765 43210',
-  items: [{ description: 'Consulting services', hsnCode: '998311', quantity: 1, unitPrice: 10000, total: 10500 }],
+  items: [{ description: 'Consulting services', hsnCode: '998311', quantity: 1, unitPrice: 10000, taxRate: 5, taxAmount: 500, total: 10500 }],
   subtotal: 10000, tax: 500, total: 10500, amountPaid: 0,
 };
 

@@ -1,0 +1,387 @@
+/* ============================================================================
+   A4 tax invoice (InvoicePrintView). Neutral ink so any company's logo sits
+   well on it; sized in mm/pt so preview, print and PDF match.
+   ============================================================================ */
+
+.inv-doc {
+  --ink: #111827;
+  --ink-2: #374151;
+  --muted: #6B7280;
+  --rule: #D1D5DB;
+  --rule-soft: #E5E7EB;
+  --fill: #F3F4F6;
+
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 14mm 15mm 12mm;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: var(--ink);
+  font-family: 'Plus Jakarta Sans', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-size: 9pt;
+  line-height: 1.45;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.inv-doc *,
+.inv-doc *::before,
+.inv-doc *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.inv-doc table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inv-label {
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.5mm;
+}
+
+/* ── Letterhead ───────────────────────────────────────────────────────── */
+.inv-head {
+  padding-bottom: 4mm;
+}
+
+.inv-brand {
+  display: flex;
+  align-items: center;
+  gap: 7mm;
+  min-width: 0;
+}
+
+.inv-co {
+  flex: 1;
+  min-width: 0;
+}
+
+.inv-logo {
+  height: 26mm;
+  max-width: 62mm;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.inv-co h1 {
+  font-size: 15pt;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  margin-bottom: 1.5mm;
+}
+
+.inv-co p {
+  font-size: 8.5pt;
+  color: var(--ink-2);
+}
+
+.inv-taxids {
+  margin-top: 1.5mm;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1mm 5mm;
+  color: var(--ink) !important;
+}
+
+.inv-taxids b {
+  font-weight: 700;
+}
+
+.inv-titlebar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 2.5mm 0;
+  border-top: 1.5pt solid var(--ink);
+  border-bottom: 0.5pt solid var(--rule);
+}
+
+.inv-titlebar h2 {
+  font-size: 14pt;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.inv-titlebar p {
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Parties & details ────────────────────────────────────────────────── */
+.inv-parties {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 8mm;
+  padding: 5mm 0;
+}
+
+.inv-billto p {
+  font-size: 8.5pt;
+  color: var(--ink-2);
+}
+
+.inv-billto .inv-billto-name {
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 1mm;
+}
+
+.inv-details {
+  align-self: start;
+  border: 0.75pt solid var(--rule);
+}
+
+.inv-details th,
+.inv-details td {
+  padding: 1.6mm 3mm;
+  font-size: 8.5pt;
+  text-align: left;
+  border-bottom: 0.5pt solid var(--rule-soft);
+}
+
+.inv-details tr:last-child th,
+.inv-details tr:last-child td {
+  border-bottom: none;
+}
+
+.inv-details th {
+  width: 42%;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--fill);
+}
+
+.inv-details td {
+  font-weight: 600;
+}
+
+/* ── Items ────────────────────────────────────────────────────────────── */
+.inv-items {
+  border: 0.75pt solid var(--rule);
+}
+
+.inv-items thead th {
+  padding: 2.2mm 2mm;
+  background: var(--ink);
+  color: #fff;
+  font-size: 7.5pt;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.inv-items tbody td {
+  padding: 2.4mm 2mm;
+  font-size: 8.5pt;
+  border-bottom: 0.5pt solid var(--rule-soft);
+  vertical-align: top;
+}
+
+.inv-items tbody tr:nth-child(even) td {
+  background: #FAFAFA;
+}
+
+.inv-items .c-idx {
+  width: 7mm;
+  text-align: center;
+  color: var(--muted);
+}
+
+.inv-items .c-desc {
+  width: auto;
+  font-weight: 500;
+}
+
+.inv-items .c-num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-items .c-strong {
+  font-weight: 700;
+}
+
+.inv-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 6mm !important;
+}
+
+/* ── Summary ──────────────────────────────────────────────────────────── */
+.inv-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72mm;
+  gap: 8mm;
+  padding-top: 5mm;
+}
+
+.inv-summary-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4mm;
+}
+
+.inv-words {
+  font-size: 8.5pt;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.inv-pre {
+  font-size: 8.5pt;
+  color: var(--ink-2);
+  white-space: pre-line;
+}
+
+.inv-kv th,
+.inv-kv td {
+  padding: 0.6mm 0;
+  font-size: 8.5pt;
+  text-align: left;
+  vertical-align: top;
+}
+
+.inv-kv th {
+  width: 22mm;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.inv-totals {
+  align-self: start;
+}
+
+.inv-totals th,
+.inv-totals td {
+  padding: 1.6mm 0;
+  font-size: 9pt;
+  border-bottom: 0.5pt solid var(--rule-soft);
+}
+
+.inv-totals th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.inv-totals td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-totals .inv-grand th,
+.inv-totals .inv-grand td {
+  padding: 2.4mm 0;
+  font-size: 11pt;
+  font-weight: 800;
+  color: var(--ink);
+  border-top: 1.25pt solid var(--ink);
+  border-bottom: 1.25pt solid var(--ink);
+}
+
+.inv-totals .inv-due th,
+.inv-totals .inv-due td {
+  padding: 2mm 2.5mm;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--fill);
+  border-bottom: none;
+}
+
+/* ── Notes ────────────────────────────────────────────────────────────── */
+.inv-notes {
+  margin-top: 5mm;
+  padding-top: 3mm;
+  border-top: 0.5pt solid var(--rule-soft);
+}
+
+.inv-notes p {
+  font-size: 8pt;
+  color: var(--ink-2);
+}
+
+.inv-notes p + p {
+  margin-top: 1mm;
+}
+
+/* ── Footer (pinned to the bottom of the page) ────────────────────────── */
+.inv-foot {
+  margin-top: auto;
+  padding-top: 8mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8mm;
+}
+
+.inv-foot-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2mm;
+  min-width: 0;
+}
+
+.inv-computer {
+  font-size: 7pt;
+  color: var(--muted);
+}
+
+.inv-sign {
+  width: 62mm;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.inv-sign p {
+  font-size: 8.5pt;
+  font-weight: 600;
+}
+
+.inv-sign-space {
+  height: 22mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inv-sign-space img {
+  max-height: 21mm;
+  max-width: 50mm;
+  object-fit: contain;
+}
+
+.inv-sign .inv-sign-line {
+  padding-top: 1.5mm;
+  border-top: 0.75pt solid var(--ink);
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+/* Print: exactly one sheet per page, no shadows */
+@media print {
+  .inv-doc {
+    min-height: 296mm;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+}
