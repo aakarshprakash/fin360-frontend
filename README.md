@@ -15,6 +15,21 @@ npm run build                  # production bundle in dist/
 
 Without `VITE_API_BASE_URL` the app talks to the production API configured in `src/utils/api.js`.
 
+## Deploy (Cloudflare Pages)
+
+Cloudflare Pages builds this repo on every push to `main`.
+
+| Setting | Value |
+|---|---|
+| Framework preset | Vite (or None) |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Node version | 22 (pinned by `.node-version`) |
+| Environment variable | `VITE_API_BASE_URL` = your API, e.g. `https://leadcrm.peoplenex.online/api` |
+
+`public/_redirects` sends every route to `index.html`, so deep links like `/invoices/28` work.
+After changing `VITE_API_BASE_URL`, trigger a new deployment — Vite bakes it in at build time.
+
 ## Brand & theme
 
 Everything follows the *Fin360 Complete Financial Control* brand board:
