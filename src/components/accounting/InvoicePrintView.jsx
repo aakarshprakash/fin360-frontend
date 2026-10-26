@@ -1,9 +1,10 @@
 // Invoice Print View — a professional A4 GST tax invoice. Company details come
-// from Settings > Business & Tax Details; layout variations (Standard /
-// Letterhead) come from invoiceTemplates.js. Sized in mm so screen preview,
+// from Settings > Business & Tax Details; everything about the layout (preset,
+// colours, font, logo, sections, columns, labels) comes from the invoice
+// template, resolved by invoiceTemplates.js. Sized in mm so screen preview,
 // print and "Save as PDF" match.
 import { API_ORIGIN } from '../../utils/api';
-import { resolveInvoiceTemplate } from './invoiceTemplates';
+import { FONT_STACKS, TEXT_SIZES, resolveInvoiceLayout, textOn } from './invoiceTemplates';
 import '../../styles/InvoicePrint.css';
 
 const defaultCompany = {
@@ -68,9 +69,14 @@ function gstLines(items, invoiceTax, sellerState, buyerState) {
   });
 }
 
+/**
+ * @param template  { invoiceTheme, layout, termsAndConditions, footerText }
+ *                  (a bare preset id string is accepted too)
+ */
 function InvoicePrintView({ invoice, company, paymentMethods, template }) {
   const co = { ...defaultCompany, ...(company || {}) };
-  const tpl = resolveInvoiceTemplate(template);
+  const tplSettings = template && typeof template === 'object' ? template : { invoiceTheme: template };
+  const L = resolveInvoiceLayout(tplSettings.invoiceTheme, tplSettings.layout);
   const methodsRaw = Array.isArray(paymentMethods) ? paymentMethods : (Array.isArray(paymentMethods?.methods) ? paymentMethods.methods : []);
   const methods = methodsRaw.filter((m) => m.enabled !== false);
 
@@ -78,6 +84,14 @@ function InvoicePrintView({ invoice, company, paymentMethods, template }) {
   const curr = invoice?.currency || 'INR';
   const hasDiscount = items.some((i) => num(i.discount) > 0);
   const hasTax = items.some((i) => num(i.taxRate) > 0 || num(i.taxAmount) > 0);
+  const cols = {
+    hsn: L.columns.hsn,
+    taxable: hasTax && L.columns.taxableValue,
+    rate: hasTax && L.columns.gstRate,
+    gst: hasTax && L.columns.gstAmount,
+  };
+  const colCount = 5 + (cols.hsn ? 1 : 0) + (hasDiscount ? 1 : 0) + (cols.taxable ? 1 : 0) + (cols.rate ? 1 : 0) + (cols.gst ? 1 : 0);
+
   const discount = num(invoice.discount);
   const amountPaid = num(invoice.amountPaid);
   const balanceDue = num(invoice.total) - amountPaid;
@@ -90,22 +104,38 @@ function InvoicePrintView({ invoice, company, paymentMethods, template }) {
     co.cin && ['CIN', co.cin],
   ].filter(Boolean);
   const stateLine = co.state ? `${co.state}${co.stateCode ? ` (Code ${co.stateCode})` : ''}` : '';
-  const colCount = 6 + (hasDiscount ? 1 : 0) + (hasTax ? 3 : 0);
+  const termsText = (tplSettings.termsAndConditions || '').trim();
+  const footerText = (tplSettings.footerText || '').trim();
+  const showTerms = L.sections.terms && termsText;
+  const showNotes = L.sections.notes && invoice.notes;
+
+  const accent = L.style.accentColor;
+  const docStyle = {
+    '--accent': accent,
+    '--accent-text': textOn(accent),
+    '--accent-soft': `${accent}1A`,
+    '--inv-fs': TEXT_SIZES[L.style.textSize] || TEXT_SIZES.normal,
+    '--inv-font': FONT_STACKS[L.style.font] || FONT_STACKS.modern,
+    '--logo-h': `${L.logo.size}mm`,
+  };
 
   return (
-    <div className="inv-print inv-doc">
+    <div
+      className={`inv-print inv-doc inv-table-${L.style.tableStyle} inv-logo-${L.logo.position}`}
+      style={docStyle}
+    >
       {/* ── Letterhead ─────────────────────────────────────────── */}
       <header className="inv-head">
         <div className="inv-brand">
-          {co.companyLogo && (
+          {L.logo.show && co.companyLogo && (
             <img className="inv-logo" src={`${API_ORIGIN}/storage/${co.companyLogo}`} alt={co.companyName} />
           )}
           <div className="inv-co">
             {co.companyName && <h1>{co.companyName}</h1>}
-            {co.address && <p className="inv-co-address">{oneLine(co.address)}</p>}
-            {contact.length > 0 && <p>{contact.join('  ·  ')}</p>}
-            {stateLine && <p>State: {stateLine}</p>}
-            {tpl.taxIdsInLetterhead && taxIds.length > 0 && (
+            {L.header.showAddress && co.address && <p className="inv-co-address">{oneLine(co.address)}</p>}
+            {L.header.showContact && contact.length > 0 && <p>{contact.join('  ·  ')}</p>}
+            {L.header.showState && stateLine && <p>State: {stateLine}</p>}
+            {L.header.taxIds === 'letterhead' && taxIds.length > 0 && (
               <p className="inv-taxids">
                 {taxIds.map(([k, v]) => <span key={k}><b>{k}:</b> {v}</span>)}
               </p>
@@ -114,19 +144,19 @@ function InvoicePrintView({ invoice, company, paymentMethods, template }) {
         </div>
       </header>
       <div className="inv-titlebar">
-        <h2>Tax Invoice</h2>
-        <p>Original for Recipient</p>
+        <h2>{L.header.title || 'Tax Invoice'}</h2>
+        {L.header.subtitle && <p>{L.header.subtitle}</p>}
       </div>
 
       {/* ── Parties & invoice details ──────────────────────────── */}
       <section className="inv-parties">
         <div className="inv-billto">
-          <p className="inv-label">Bill To</p>
+          <p className="inv-label">{L.labels.billTo || 'Bill To'}</p>
           <p className="inv-billto-name">{invoice.customer || '—'}</p>
           {invoice.customerAddress && <p>{oneLine(invoice.customerAddress)}</p>}
           {invoice.customerPhone && <p>Phone: {invoice.customerPhone}</p>}
           {invoice.customerEmail && <p>Email: {invoice.customerEmail}</p>}
-          <p>GSTIN: {invoice.customerGst || 'Unregistered'}</p>
+          {L.details.customerGstin && <p>GSTIN: {invoice.customerGst || 'Unregistered'}</p>}
           {invoice.customerState && <p>State: {invoice.customerState}</p>}
         </div>
         <table className="inv-details">
@@ -134,9 +164,9 @@ function InvoicePrintView({ invoice, company, paymentMethods, template }) {
             <tr><th>Invoice No.</th><td>{invoice.invoiceNumber}</td></tr>
             <tr><th>Invoice Date</th><td>{fmtDate(invoice.date)}</td></tr>
             <tr><th>Due Date</th><td>{fmtDate(invoice.dueDate)}</td></tr>
-            {invoice.customerState && <tr><th>Place of Supply</th><td>{invoice.customerState}</td></tr>}
+            {L.details.placeOfSupply && invoice.customerState && <tr><th>Place of Supply</th><td>{invoice.customerState}</td></tr>}
             {curr !== 'INR' && <tr><th>Currency</th><td>{curr}</td></tr>}
-            {tpl.sellerGstinInDetails && co.gstNumber && <tr><th>Seller GSTIN</th><td>{co.gstNumber}</td></tr>}
+            {L.details.sellerGstin && co.gstNumber && <tr><th>Seller GSTIN</th><td>{co.gstNumber}</td></tr>}
           </tbody>
         </table>
       </section>
@@ -147,13 +177,13 @@ function InvoicePrintView({ invoice, company, paymentMethods, template }) {
           <tr>
             <th className="c-idx">#</th>
             <th className="c-desc">Description</th>
-            <th>HSN/SAC</th>
+            {cols.hsn && <th>HSN/SAC</th>}
             <th className="c-num">Qty</th>
             <th className="c-num">Rate</th>
             {hasDiscount && <th className="c-num">Discount</th>}
-            {hasTax && <th className="c-num">Taxable Value</th>}
-            {hasTax && <th className="c-num">GST %</th>}
-            {hasTax && <th className="c-num">GST</th>}
+            {cols.taxable && <th className="c-num">Taxable Value</th>}
+            {cols.rate && <th className="c-num">GST %</th>}
+            {cols.gst && <th className="c-num">GST</th>}
             <th className="c-num">Amount (₹)</th>
           </tr>
         </thead>
@@ -165,13 +195,13 @@ function InvoicePrintView({ invoice, company, paymentMethods, template }) {
               <tr key={item.id || idx}>
                 <td className="c-idx">{idx + 1}</td>
                 <td className="c-desc">{item.description || '—'}</td>
-                <td>{item.hsnCode || item.hsn_code || '—'}</td>
+                {cols.hsn && <td>{item.hsnCode || item.hsn_code || '—'}</td>}
                 <td className="c-num">{num(item.quantity).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                 <td className="c-num">{fmt(rate)}</td>
                 {hasDiscount && <td className="c-num">{num(item.discount) > 0 ? fmt(item.discount) : '—'}</td>}
-                {hasTax && <td className="c-num">{fmt(taxable)}</td>}
-                {hasTax && <td className="c-num">{fmtRate(item.taxRate)}</td>}
-                {hasTax && <td className="c-num">{fmt(item.taxAmount)}</td>}
+                {cols.taxable && <td className="c-num">{fmt(taxable)}</td>}
+                {cols.rate && <td className="c-num">{fmtRate(item.taxRate)}</td>}
+                {cols.gst && <td className="c-num">{fmt(item.taxAmount)}</td>}
                 <td className="c-num c-strong">{fmt(item.total)}</td>
               </tr>
             );
@@ -185,17 +215,19 @@ function InvoicePrintView({ invoice, company, paymentMethods, template }) {
       {/* ── Words, bank details & totals ───────────────────────── */}
       <section className="inv-summary">
         <div className="inv-summary-left">
-          <div className="inv-block">
-            <p className="inv-label">Amount in Words</p>
-            <p className="inv-words">{amountInWords(invoice.total)}</p>
-          </div>
-          {co.bankDetails && (
+          {L.sections.amountInWords && (
             <div className="inv-block">
-              <p className="inv-label">Bank Details</p>
+              <p className="inv-label">Amount in Words</p>
+              <p className="inv-words">{amountInWords(invoice.total)}</p>
+            </div>
+          )}
+          {L.sections.bankDetails && co.bankDetails && (
+            <div className="inv-block">
+              <p className="inv-label">{L.labels.bankDetails || 'Bank Details'}</p>
               <p className="inv-pre">{co.bankDetails}</p>
             </div>
           )}
-          {tpl.showPaymentMethods && methods.length > 0 && (
+          {L.sections.paymentOptions && methods.length > 0 && (
             <div className="inv-block">
               <p className="inv-label">Payment Options</p>
               <table className="inv-kv">
@@ -227,39 +259,42 @@ function InvoicePrintView({ invoice, company, paymentMethods, template }) {
       </section>
 
       {/* ── Notes & terms ──────────────────────────────────────── */}
-      {(invoice.notes || invoice.termsAndConditions || tpl.showDefaultTerms) && (
+      {(showNotes || showTerms) && (
         <section className="inv-notes">
-          {invoice.notes && <p><b>Notes:</b> {invoice.notes}</p>}
-          {(invoice.termsAndConditions || tpl.showDefaultTerms) && (
+          {showNotes && <p><b>Notes:</b> {invoice.notes}</p>}
+          {showTerms && (
             <p>
-              {tpl.bankSectionTitle && <b>{tpl.bankSectionTitle}: </b>}
-              {invoice.termsAndConditions || 'Payment is due within 30 days of the invoice date. Late payments may be subject to interest charges.'}
+              {L.labels.termsHeading && <b>{L.labels.termsHeading}: </b>}
+              <span className="inv-pre-inline">{termsText}</span>
             </p>
           )}
         </section>
       )}
 
-      {/* ── Footer: tax IDs (Standard) + signatory ─────────────── */}
+      {/* ── Footer: tax IDs, message, signatory ────────────────── */}
       <footer className="inv-foot">
         <div className="inv-foot-left">
-          {tpl.taxIdsInFooter && taxIds.length > 0 && (
+          {L.header.taxIds === 'footer' && taxIds.length > 0 && (
             <table className="inv-kv">
               <tbody>
                 {taxIds.map(([k, v]) => <tr key={k}><th>{k}</th><td>{v}</td></tr>)}
               </tbody>
             </table>
           )}
-          <p className="inv-computer">This is a computer-generated invoice.</p>
+          {L.sections.footerMessage && footerText && <p className="inv-thanks">{footerText}</p>}
+          {L.sections.computerGenerated && <p className="inv-computer">This is a computer-generated invoice.</p>}
         </div>
-        <div className="inv-sign">
-          <p>For {co.companyName || 'the Company'}</p>
-          <div className="inv-sign-space">
-            {co.sealSignatureImage && invoice?.useSignature !== false && (
-              <img src={`${API_ORIGIN}/storage/${co.sealSignatureImage}`} alt="Seal & Signature" />
-            )}
+        {L.signature.show && (
+          <div className="inv-sign">
+            {L.signature.forCompany && <p>For {co.companyName || 'the Company'}</p>}
+            <div className="inv-sign-space">
+              {co.sealSignatureImage && invoice?.useSignature !== false && (
+                <img src={`${API_ORIGIN}/storage/${co.sealSignatureImage}`} alt="Seal & Signature" />
+              )}
+            </div>
+            <p className="inv-sign-line">{L.labels.signatory || 'Authorized Signatory'}</p>
           </div>
-          <p className="inv-sign-line">Authorized Signatory</p>
-        </div>
+        )}
       </footer>
     </div>
   );

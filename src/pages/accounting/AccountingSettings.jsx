@@ -7,16 +7,7 @@ import { API_ORIGIN } from '../../utils/api';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
 import useSnackbar from '../../utils/useSnackbar';
-import InvoicePrintView from '../../components/accounting/InvoicePrintView';
-import { INVOICE_TEMPLATES } from '../../components/accounting/invoiceTemplates';
-
-// Sample used only for the template preview
-const PREVIEW_INVOICE = {
-  invoiceNumber: 'INV-00001', date: new Date().toISOString(), dueDate: new Date(Date.now() + 7 * 864e5).toISOString(),
-  customer: 'Sample Customer Pvt Ltd', customerAddress: 'MG Road, Kochi', customerPhone: '98765 43210',
-  items: [{ description: 'Consulting services', hsnCode: '998311', quantity: 1, unitPrice: 10000, taxRate: 5, taxAmount: 500, total: 10500 }],
-  subtotal: 10000, tax: 500, total: 10500, amountPaid: 0,
-};
+import InvoiceTemplateBuilder from '../../components/accounting/InvoiceTemplateBuilder';
 
 const defaultCompany = {
   companyName: '', address: '',
@@ -447,58 +438,20 @@ function AccountingSettings() {
 
         {/* Invoice Template Settings */}
         {activeTab === 'invoice' && (
-          <div className="acc-table-container" style={{padding:'24px'}}>
-            <h3 style={{margin:'0 0 6px',fontSize:'16px',fontWeight:600}}>Print Layout</h3>
-            <p style={{margin:'0 0 14px',fontSize:'13px',color:'var(--neutral-500)'}}>
-              Used for every printed and saved-as-PDF invoice. Click Save Template to apply.
-            </p>
-            <div className="acc-template-picker" role="radiogroup" aria-label="Invoice print layout">
-              {INVOICE_TEMPLATES.map((t) => {
-                const selected = (template.invoiceTheme || 'default') === t.id
-                  || (t.id === 'default' && !INVOICE_TEMPLATES.some((x) => x.id === template.invoiceTheme));
-                return (
-                  <label key={t.id} className={`acc-template-option ${selected ? 'is-selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="invoiceTheme"
-                      value={t.id}
-                      checked={selected}
-                      onChange={() => setTemplate({ ...template, invoiceTheme: t.id })}
-                    />
-                    <span>
-                      <strong>{t.label}</strong>
-                      <small>{t.description}</small>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-            <div className="acc-template-preview" aria-label="Preview">
-              <div className="acc-template-preview-page">
-                <InvoicePrintView
-                  invoice={PREVIEW_INVOICE}
-                  company={company}
-                  paymentMethods={methods}
-                  template={template.invoiceTheme}
-                />
+          <>
+            <InvoiceTemplateBuilder template={template} onChange={setTemplate} company={company} methods={methods} />
+            <div className="acc-table-container" style={{padding:'24px', marginTop:'16px'}}>
+              <h3 style={{margin:'0 0 18px',fontSize:'16px',fontWeight:600}}>Invoice Defaults</h3>
+              <div className="acc-form-row">
+                <div className="acc-form-group"><label>Invoice Prefix</label><input type="text" value={template.invoicePrefix || ''} onChange={(e) => setTemplate({...template, invoicePrefix: e.target.value})} /></div>
+                <div className="acc-form-group"><label>Default Payment Terms</label>
+                  <select value={template.defaultPaymentTerms || 'Net 30'} onChange={(e) => setTemplate({...template, defaultPaymentTerms: e.target.value})}>
+                    <option>Net 15</option><option>Net 30</option><option>Net 45</option><option>Net 60</option><option>Due on Receipt</option>
+                  </select>
+                </div>
               </div>
             </div>
-
-            <h3 style={{margin:'24px 0 18px',fontSize:'16px',fontWeight:600}}>Defaults</h3>
-            <div className="acc-form-row">
-              <div className="acc-form-group"><label>Invoice Prefix</label><input type="text" value={template.invoicePrefix || ''} onChange={(e) => setTemplate({...template, invoicePrefix: e.target.value})} /></div>
-              <div className="acc-form-group"><label>Default Payment Terms</label>
-                <select value={template.defaultPaymentTerms || 'Net 30'} onChange={(e) => setTemplate({...template, defaultPaymentTerms: e.target.value})}>
-                  <option>Net 15</option><option>Net 30</option><option>Net 45</option><option>Net 60</option><option>Due on Receipt</option>
-                </select>
-              </div>
-            </div>
-            <div className="acc-form-group"><label>Footer Text</label><input type="text" value={template.footerText || ''} onChange={(e) => setTemplate({...template, footerText: e.target.value})} /></div>
-            <div className="acc-form-group"><label>Terms & Conditions</label><textarea value={template.termsAndConditions || ''} onChange={(e) => setTemplate({...template, termsAndConditions: e.target.value})} /></div>
-            <div className="acc-form-row">
-              <div className="acc-form-group"><label>Invoice Logo URL</label><input type="text" value={template.invoiceLogo || ''} onChange={(e) => setTemplate({...template, invoiceLogo: e.target.value})} placeholder="https://..." /></div>
-            </div>
-          </div>
+          </>
         )}
 
         {/* Quotation Template Settings */}

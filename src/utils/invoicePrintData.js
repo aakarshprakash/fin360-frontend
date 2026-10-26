@@ -12,7 +12,7 @@ export async function loadInvoicePrintData() {
     getInvoiceTemplateSettings(),
   ]);
 
-  const result = { company: null, methods: [], template: 'default' };
+  const result = { company: null, methods: [], template: { invoiceTheme: 'default', layout: null } };
   if (settingsRes.status === 'fulfilled') {
     result.company = unwrap(settingsRes.value)?.company || null;
   }
@@ -22,7 +22,13 @@ export async function loadInvoicePrintData() {
     result.methods = Array.isArray(list) ? list : [];
   }
   if (templateRes.status === 'fulfilled') {
-    result.template = unwrap(templateRes.value)?.invoiceTheme || 'default';
+    const t = unwrap(templateRes.value) || {};
+    result.template = {
+      invoiceTheme: t.invoiceTheme || 'default',
+      layout: t.layout || null,
+      termsAndConditions: t.termsAndConditions || '',
+      footerText: t.footerText || '',
+    };
   }
   return result;
 }
