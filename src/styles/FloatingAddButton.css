@@ -1,0 +1,55 @@
+/* Floating Action Button (FAB) - Enterprise Professional */
+
+.floating-add-button {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 56px;
+  height: 56px;
+  background: var(--brand-orange);
+  border: none;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  z-index: 999;
+}
+
+.floating-add-button:hover {
+  background: var(--accent-600);
+  box-shadow: var(--shadow-xl);
+  transform: scale(1.05);
+}
+
+.floating-add-button:active {
+  transform: scale(0.98);
+}
+
+.floating-add-button svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .floating-add-button {
+    bottom: 80px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .floating-add-button svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Hide on Create Lead page */
+body:has(.create-lead-page) .floating-add-button {
+  display: none;
+}

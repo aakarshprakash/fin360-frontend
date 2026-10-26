@@ -1,0 +1,1048 @@
+/* Shared page primitives (buttons, cards, KPI tiles, badges). Tokens live in index.css. */
+
+/* ============================================
+   DASHBOARD CONTAINER
+   ============================================ */
+
+.dashboard {
+  min-height: 100vh;
+  background-color: var(--bg-main);
+  padding: 32px;
+  position: relative;
+}
+
+.dashboard-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   DASHBOARD HEADER
+   ============================================ */
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: var(--gutter);
+}
+
+.header-left {
+  flex: 1;
+  max-width: 600px;
+  min-width: 0;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.header-right {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: var(--bg-white);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+.btn-secondary:hover {
+  background-color: #FAFBFC;
+  border-color: #D1D5DB;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.btn-link:hover {
+  color: var(--primary-dark);
+  background-color: rgba(91, 33, 182, 0.08);
+}
+
+/* ============================================
+   KPI GRID - SUMMARY CARDS
+   ============================================ */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gutter);
+  margin-bottom: 32px;
+}
+
+.kpi-card {
+  background-color: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--card-border-radius);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 100px;
+}
+
+.kpi-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.kpi-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(91, 33, 182, 0.1), rgba(76, 29, 149, 0.05));
+  border-radius: 10px;
+}
+
+.kpi-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================
+   MAIN DASHBOARD GRID
+   ============================================ */
+
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gutter);
+}
+
+/* ============================================
+   FIRST ROW - Tasks, Recent Leads, Calendar
+   ============================================ */
+
+.tasks-leads-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gutter);
+  align-items: stretch;
+}
+
+.tasks-leads-row > .card {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
+  height: 100%;
+}
+
+/* ============================================
+   SECOND ROW - Follow-ups, Funnel, Status
+   ============================================ */
+
+.calendar-events-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gutter);
+  margin-bottom: var(--gutter);
+  align-items: stretch;
+}
+
+.calendar-events-row > .card {
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+  height: 100%;
+}
+
+/* ============================================
+   CHARTS ROW (Third Row) - Professional Data Visualizations
+   ============================================ */
+
+.charts-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--gutter);
+  margin-bottom: var(--gutter);
+}
+
+.chart-card {
+  background: var(--bg-white);
+  border-radius: var(--card-border-radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: var(--card-padding);
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-card .card-header {
+  padding: 0;
+  margin-bottom: 20px;
+  border-bottom: none;
+  min-height: auto;
+}
+
+/* ============================================
+   UNIFIED CARD STYLES
+   ============================================ */
+
+.card {
+  background-color: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--card-border-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #D1D5DB;
+}
+
+/* Unified Card Header - EXACT same height for all cards */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--card-padding);
+  height: var(--card-header-height);
+  min-height: var(--card-header-height);
+  max-height: var(--card-header-height);
+  background-color: #FAFBFC;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+  flex-wrap: wrap;
+  margin-top: 10px !important;
+}
+
+/* ============================================
+   TASKS CARD
+   ============================================ */
+
+.tasks-card .tasks-count {
+  font-size: 12px;
+  color: var(--primary);
+  background-color: rgba(91, 33, 182, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.tasks-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--card-padding);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid var(--border);
+  min-height: var(--row-height);
+}
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-item:hover {
+  background-color: #FAFBFC;
+}
+
+.task-item.overdue {
+  background-color: rgba(239, 68, 68, 0.04);
+}
+
+.task-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.task-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.task-lead {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.task-company {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.task-priority {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.task-priority.priority-urgent {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #DC2626;
+}
+
+.task-priority.priority-high {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+}
+
+.task-priority.priority-medium {
+  background-color: rgba(91, 33, 182, 0.12);
+  color: var(--primary-600);
+}
+
+.task-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* ============================================
+   LEADS LIST
+   ============================================ */
+
+.leads-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.lead-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--card-padding);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid var(--border);
+  min-height: var(--row-height);
+}
+
+.lead-item:last-child {
+  border-bottom: none;
+}
+
+.lead-item:hover {
+  background-color: #FAFBFC;
+}
+
+.lead-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.lead-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lead-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.lead-company {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+.lead-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Status badge colors are now set dynamically via inline styles from useLeadStatuses hook */
+
+/* ============================================
+   CALENDAR CARD
+   ============================================ */
+
+.calendar-card .calendar-grid {
+  flex: 1;
+  padding: 16px var(--card-padding);
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-nav-btn {
+  width: 32px;
+  height: 32px;
+  background-color: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.cal-nav-btn:hover {
+  background-color: #FAFBFC;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.cal-nav-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.cal-month {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 120px;
+  text-align: center;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.weekday {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  padding: 6px 0;
+  letter-spacing: 0.3px;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  background-color: transparent;
+  border: 1px solid transparent;
+  gap: 2px;
+}
+
+.calendar-day:hover:not(.empty) {
+  background-color: rgba(91, 33, 182, 0.08);
+  border-color: rgba(91, 33, 182, 0.2);
+}
+
+.calendar-day.empty {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.calendar-day.today {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  font-weight: 600;
+}
+
+.calendar-day.today:hover {
+  background: var(--primary-dark);
+}
+
+.calendar-day.selected:not(.today) {
+  background-color: rgba(91, 33, 182, 0.12);
+  border-color: var(--primary);
+  font-weight: 500;
+}
+
+.calendar-day.has-event::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--primary);
+}
+
+.calendar-day.today.has-event::after {
+  background-color: white;
+}
+
+.day-number {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.event-dot {
+  display: none;
+}
+
+/* ============================================
+   TODAY'S FOLLOW-UPS PANEL
+   ============================================ */
+
+.today-events-card .calendar-events {
+  flex: 1;
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.calendar-events .event-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background-color: #FAFBFC;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-left: 3px solid var(--border);
+  min-height: var(--row-height);
+}
+
+.calendar-events .event-item:hover {
+  background-color: rgba(91, 33, 182, 0.04);
+  border-left-color: var(--primary);
+}
+
+.calendar-events .event-item.followup {
+  border-left-color: var(--primary);
+}
+
+.calendar-events .event-item.call {
+  border-left-color: var(--success);
+}
+
+.calendar-events .event-item.meeting {
+  border-left-color: var(--info);
+}
+
+.event-type-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.event-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.event-status {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* Event status colors are now set dynamically via inline styles from useLeadStatuses hook */
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 200px;
+  padding: 32px var(--card-padding);
+  text-align: center;
+  gap: 12px;
+}
+
+.empty-icon {
+  font-size: 32px;
+  opacity: 0.4;
+}
+
+.empty-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ============================================
+   LEAD FUNNEL SNAPSHOT PANEL
+   ============================================ */
+
+.funnel-snapshot {
+  flex: 1;
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.funnel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  min-height: var(--row-height);
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s ease;
+}
+
+.funnel-item:last-child {
+  border-bottom: none;
+}
+
+.funnel-item:hover {
+  background-color: rgba(91, 33, 182, 0.02);
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 6px;
+}
+
+.funnel-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+.funnel-status {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 4px;
+  text-transform: capitalize;
+  letter-spacing: 0.2px;
+  min-width: 85px;
+  text-align: center;
+  line-height: 1;
+}
+
+.funnel-number {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 50px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.funnel-bar-wrapper {
+  display: none;
+}
+
+/* funnel-status colors are now set dynamically via inline styles from useLeadStatuses hook */
+
+/* ============================================
+   STATUS BREAKDOWN PANEL
+   ============================================ */
+
+.status-breakdown-content {
+  flex: 1;
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.donut-chart-wrapper {
+  display: none;
+}
+
+.status-breakdown-legend {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  min-height: var(--row-height);
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.15s ease;
+}
+
+.breakdown-item:last-child {
+  border-bottom: none;
+}
+
+.breakdown-item:hover {
+  background-color: rgba(91, 33, 182, 0.02);
+  margin: 0 -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 6px;
+}
+
+.breakdown-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.breakdown-color.new {
+  background-color: var(--primary-600);
+}
+
+.breakdown-color.hot {
+  background-color: #F59E0B;
+}
+
+.breakdown-color.cold {
+  background-color: #9CA3AF;
+}
+
+.breakdown-color.converted {
+  background-color: #10B981;
+}
+
+.breakdown-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-left: 12px;
+  line-height: 1;
+}
+
+.breakdown-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 50px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 1200px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .tasks-leads-row,
+  .calendar-events-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tasks-leads-row > .card:last-child,
+  .calendar-events-row > .card:last-child {
+    grid-column: span 2;
+  }
+
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .calendar-events-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 16px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .kpi-card {
+    min-height: 80px;
+  }
+
+  .tasks-leads-row,
+  .calendar-events-row {
+    grid-template-columns: 1fr;
+  }
+
+  .tasks-leads-row > .card:last-child,
+  .calendar-events-row > .card:last-child {
+    grid-column: span 1;
+  }
+
+  .tasks-leads-row > .card,
+  .calendar-events-row > .card {
+    min-height: 320px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    max-width: 500px;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+
+  .header-right {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+    padding: 0 25px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+}

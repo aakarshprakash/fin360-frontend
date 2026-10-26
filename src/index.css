@@ -1,0 +1,407 @@
+/* ============================================================================
+   Fin360 design tokens — sourced from the "Complete Financial Control" brand board
+   Primary Purple #5B21B6 (trust & intelligence) · Accent Orange #F97316 (growth & energy)
+   Soft Pink #FEE2E2 (highlights) · Background #F8FAFC · Text #1F2937 · Plus Jakarta Sans
+   ============================================================================ */
+:root {
+  /* Brand */
+  --brand-purple: #5B21B6;
+  --brand-purple-deep: #2E1065;
+  --brand-orange: #F97316;
+  --brand-pink: #FEE2E2;
+  --brand-bg: #F8FAFC;
+  --brand-ink: #1F2937;
+  --brand-gradient: linear-gradient(135deg, #5B21B6 0%, #7C3AED 55%, #F97316 140%);
+
+  /* Primary — purple ramp (600 is the brand purple) */
+  --primary-50: #F5F3FF;
+  --primary-100: #EDE9FE;
+  --primary-200: #DDD6FE;
+  --primary-300: #C4B5FD;
+  --primary-400: #8B5CF6;
+  --primary-500: #6D28D9;
+  --primary-600: #5B21B6;
+  --primary-700: #4C1D95;
+  --primary-800: #3B1677;
+  --primary-900: #2E1065;
+
+  /* Neutrals — cool slate, anchored on the brand text colour */
+  --neutral-50: #F8FAFC;
+  --neutral-100: #F1F5F9;
+  --neutral-200: #E2E8F0;
+  --neutral-300: #CBD5E1;
+  --neutral-400: #94A3B8;
+  --neutral-500: #64748B;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1F2937;
+  --neutral-900: #111827;
+
+  /* Success — emerald (positive deltas, income) */
+  --success-50: #ECFDF5;
+  --success-100: #D1FAE5;
+  --success-200: #A7F3D0;
+  --success-300: #6EE7B7;
+  --success-400: #34D399;
+  --success-500: #10B981;
+  --success-600: #059669;
+  --success-700: #047857;
+
+  /* Warning — amber */
+  --warning-50: #FFFBEB;
+  --warning-100: #FEF3C7;
+  --warning-200: #FDE68A;
+  --warning-300: #FCD34D;
+  --warning-400: #FBBF24;
+  --warning-500: #F59E0B;
+  --warning-600: #D97706;
+  --warning-700: #B45309;
+
+  /* Error — red */
+  --error-50: #FEF2F2;
+  --error-100: #FEE2E2;
+  --error-200: #FECACA;
+  --error-300: #FCA5A5;
+  --error-400: #F87171;
+  --error-500: #EF4444;
+  --error-600: #DC2626;
+  --error-700: #B91C1C;
+
+  /* Accent — brand orange ramp */
+  --accent-50: #FFF7ED;
+  --accent-100: #FFEDD5;
+  --accent-200: #FED7AA;
+  --accent-300: #FDBA74;
+  --accent-400: #FB923C;
+  --accent-500: #F97316;
+  --accent-600: #EA580C;
+  --accent-700: #C2410C;
+
+  /* Surfaces */
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #F1F5F9;
+  --bg-tertiary: #FFFFFF;
+  --surface: #FFFFFF;
+
+  /* Text */
+  --text-primary: #1F2937;
+  --text-secondary: #475569;
+  --text-tertiary: #64748B;
+  --text-muted: #94A3B8;
+
+  /* Legacy aliases still referenced by page styles */
+  --primary: var(--primary-600);
+  --primary-dark: var(--primary-700);
+  --bg-main: var(--bg-primary);
+  --bg-white: #FFFFFF;
+  --border: var(--neutral-200);
+  --success: var(--success-600);
+  --warning: var(--warning-500);
+  --danger: var(--error-500);
+  --info: var(--primary-500);
+
+  /* Shadows — soft, purple-tinted */
+  --shadow-xs: 0 1px 2px rgba(46, 16, 101, 0.04);
+  --shadow-sm: 0 1px 3px rgba(46, 16, 101, 0.06), 0 1px 2px rgba(46, 16, 101, 0.03);
+  --shadow-md: 0 4px 12px rgba(46, 16, 101, 0.06);
+  --shadow-lg: 0 12px 24px rgba(46, 16, 101, 0.08);
+  --shadow-xl: 0 20px 40px rgba(46, 16, 101, 0.10);
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-full: 9999px;
+
+  /* Layout */
+  --card-border-radius: 16px;
+  --card-header-height: 56px;
+  --card-padding: 20px;
+  --row-height: 52px;
+  --gutter: 24px;
+  --sidebar-width: 256px;
+  --topbar-height: 68px;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Transitions */
+  --transition-base: all 0.2s ease;
+  --transition-slow: all 0.3s ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.55;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.01em;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: var(--radius-full);
+  border: 3px solid var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-400);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--primary-400);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--primary-200);
+  color: var(--text-primary);
+}
+
+/* Snackbar Styles - Modern & Animated */
+.snackbar {
+  position: fixed;
+  z-index: 99999;
+  padding: 16px 20px;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 320px;
+  max-width: 480px;
+  box-shadow: var(--shadow-xl);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(100px);
+  transition: all 0.4s ease-out;
+  pointer-events: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.snackbar.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.snackbar.hiding {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.3s ease-in;
+}
+
+/* Snackbar Variants - Using Project Colors */
+.snackbar-success {
+  background: linear-gradient(135deg, var(--success-500) 0%, var(--success-600) 100%);
+  border-color: var(--success-400);
+}
+
+.snackbar-error {
+  background: linear-gradient(135deg, var(--error-500) 0%, var(--error-600) 100%);
+  border-color: var(--error-400);
+}
+
+.snackbar-warning {
+  background: linear-gradient(135deg, var(--warning-500) 0%, var(--warning-600) 100%);
+  border-color: var(--warning-400);
+  color: var(--neutral-900);
+}
+
+.snackbar-info {
+  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
+  border-color: var(--primary-400);
+}
+
+/* Add subtle glow effect */
+.snackbar-success {
+  box-shadow: var(--shadow-xl), 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.snackbar-error {
+  box-shadow: var(--shadow-xl), 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.snackbar-warning {
+  box-shadow: var(--shadow-xl), 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.snackbar-info {
+  box-shadow: var(--shadow-xl), 0 0 20px rgba(91, 33, 182, 0.3);
+}
+
+/* Snackbar Content */
+.snackbar-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.snackbar-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.snackbar-message {
+  flex: 1;
+  line-height: 1.4;
+}
+
+/* Snackbar Positions - Simple slide animations */
+.snackbar-top-left {
+  top: 24px;
+  left: 24px;
+  transform: translateY(-100px);
+}
+
+.snackbar-top-left.show {
+  transform: translateY(0);
+}
+
+.snackbar-top-center {
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+}
+
+.snackbar-top-center.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+.snackbar-top-right {
+  top: 24px;
+  right: 24px;
+  transform: translateY(-100px);
+}
+
+.snackbar-top-right.show {
+  transform: translateY(0);
+}
+
+.snackbar-bottom-left {
+  bottom: 24px;
+  left: 24px;
+}
+
+.snackbar-bottom-center {
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+}
+
+.snackbar-bottom-center.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+.snackbar-bottom-right {
+  bottom: 24px;
+  right: 24px;
+}
+
+/* Modern Close Button */
+.snackbar-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: currentColor;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 16px;
+  padding: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.snackbar-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.snackbar-close:active {
+  transform: scale(0.95);
+}
+
+/* Warning text color override for better contrast */
+.snackbar-warning .snackbar-close {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.snackbar-warning .snackbar-close:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Progress bar for auto-dismiss */
+.snackbar-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  transform-origin: left;
+  animation: snackbar-progress linear;
+}
+
+@keyframes snackbar-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Visually hidden, still announced by screen readers (chart data tables) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

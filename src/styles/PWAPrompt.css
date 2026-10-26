@@ -1,0 +1,134 @@
+/* PWA Install Prompt Styles */
+.pwa-install-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.pwa-prompt-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  max-width: 90vw;
+  width: 450px;
+}
+
+.pwa-prompt-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pwa-prompt-icon svg {
+  width: 40px;
+  height: 40px;
+  color: var(--primary-600);
+  stroke-width: 2;
+}
+
+.pwa-prompt-text {
+  flex: 1;
+}
+
+.pwa-prompt-text h3 {
+  margin: 0 0 5px 0;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.pwa-prompt-text p {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.pwa-prompt-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pwa-install-btn {
+  padding: 10px 20px;
+  background-color: var(--primary-600);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.pwa-install-btn:hover {
+  background-color: var(--primary-700);
+}
+
+.pwa-dismiss-btn {
+  background: none;
+  border: none;
+  color: #95a5a6;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+.pwa-dismiss-btn:hover {
+  color: #e74c3c;
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .pwa-install-prompt {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+  }
+
+  .pwa-prompt-content {
+    width: 100%;
+    max-width: none;
+    padding: 15px;
+  }
+
+  .pwa-prompt-icon {
+    font-size: 30px;
+  }
+
+  .pwa-prompt-icon svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  .pwa-prompt-text h3 {
+    font-size: 16px;
+  }
+
+  .pwa-prompt-text p {
+    font-size: 13px;
+  }
+}
+

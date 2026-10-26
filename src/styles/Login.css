@@ -1,0 +1,345 @@
+/* ============================================================================
+   Auth pages (sign in, forgot / reset password) — Fin360 brand split screen
+   ============================================================================ */
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(420px, 46%) minmax(0, 1fr);
+  background: var(--bg-primary);
+}
+
+/* ── Brand panel ─────────────────────────────────────────────────────────── */
+.auth-brand {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 48px 56px;
+  color: #fff;
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(249, 115, 22, 0.35) 0%, rgba(249, 115, 22, 0) 55%),
+    radial-gradient(90% 70% at 0% 100%, rgba(124, 58, 237, 0.55) 0%, rgba(124, 58, 237, 0) 60%),
+    linear-gradient(160deg, #2E1065 0%, #3B1677 55%, #4C1D95 100%);
+}
+
+.auth-brand::after {
+  content: '';
+  position: absolute;
+  right: -120px;
+  bottom: -120px;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 60px rgba(255, 255, 255, 0.03), 0 0 0 120px rgba(255, 255, 255, 0.02);
+  pointer-events: none;
+}
+
+.auth-brand-logo {
+  width: 210px;
+  height: auto;
+  display: block;
+}
+
+.auth-brand-copy h2 {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.auth-brand-copy p {
+  margin-top: 16px;
+  max-width: 420px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.auth-pillars {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 520px;
+}
+
+.auth-pillars li {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.auth-pillar-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(249, 115, 22, 0.18);
+  color: #FDBA74;
+}
+
+.auth-pillars strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.auth-pillars small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.auth-brand-foot {
+  margin-top: auto;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Form panel ──────────────────────────────────────────────────────────── */
+.auth-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.auth-logo {
+  display: none;
+  width: 180px;
+  height: auto;
+  margin-bottom: 28px;
+}
+
+.login-page {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-container {
+  width: 100%;
+}
+
+/* Legacy logo block (kept for any page still rendering it) */
+.login-logo { display: none; }
+
+.login-card {
+  background: #fff;
+  border: 1px solid var(--neutral-200);
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: var(--shadow-lg);
+}
+
+.login-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--neutral-800);
+  letter-spacing: -0.02em;
+}
+
+.login-subtitle {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--neutral-500);
+  line-height: 1.5;
+}
+
+.login-form {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.login-card .form-group label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--neutral-700);
+}
+
+.password-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.forgot-password-link {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary-600);
+}
+
+.forgot-password-link:hover {
+  color: var(--primary-800);
+}
+
+.login-card input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--neutral-200);
+  border-radius: 12px;
+  background: var(--neutral-50);
+  font-size: 14.5px;
+  color: var(--neutral-800);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.login-card input::placeholder {
+  color: var(--neutral-400);
+}
+
+.login-card input:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 4px var(--primary-50);
+}
+
+.auth-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input > svg {
+  position: absolute;
+  left: 14px;
+  color: var(--neutral-400);
+  pointer-events: none;
+}
+
+.auth-input input {
+  padding-left: 42px;
+}
+
+.auth-input:has(.auth-input-toggle) input {
+  padding-right: 44px;
+}
+
+.auth-input-toggle {
+  position: absolute;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  color: var(--neutral-400);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-input-toggle:hover {
+  color: var(--primary-600);
+  background: var(--primary-50);
+}
+
+.btn-login {
+  height: 48px;
+  margin-top: 4px;
+  border: none;
+  border-radius: 12px;
+  background: var(--brand-purple);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(91, 33, 182, 0.28);
+  transition: var(--transition-base);
+}
+
+.btn-login:hover:not(:disabled) {
+  background: var(--primary-700);
+  transform: translateY(-1px);
+}
+
+.btn-login:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.error-message,
+.success-message {
+  margin-top: 18px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.error-message {
+  background: var(--error-50);
+  border: 1px solid var(--error-200);
+  color: var(--error-700);
+}
+
+.success-message {
+  background: var(--success-50);
+  border: 1px solid var(--success-200);
+  color: var(--success-700);
+}
+
+.back-to-login {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 13.5px;
+}
+
+.back-to-login a {
+  font-weight: 600;
+  color: var(--primary-600);
+}
+
+.login-footer {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--neutral-400);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .auth-brand { padding: 40px; }
+  .auth-brand-copy h2 { font-size: 36px; }
+  .auth-pillars { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 860px) {
+  .auth-shell { grid-template-columns: minmax(0, 1fr); }
+  .auth-brand { display: none; }
+  .auth-logo { display: block; }
+  .auth-main {
+    justify-content: flex-start;
+    padding: 48px 16px 32px;
+    background:
+      radial-gradient(80% 40% at 100% 0%, rgba(249, 115, 22, 0.10) 0%, rgba(249, 115, 22, 0) 70%),
+      radial-gradient(80% 40% at 0% 0%, rgba(91, 33, 182, 0.10) 0%, rgba(91, 33, 182, 0) 70%),
+      var(--bg-primary);
+  }
+  .login-card { padding: 28px 20px; border-radius: 18px; }
+}
+
+/* Beat global .form-group input rules from Form.css */
+.login-card .auth-input input { padding-left: 42px; }
+.login-card .auth-input:has(.auth-input-toggle) input { padding-right: 44px; }

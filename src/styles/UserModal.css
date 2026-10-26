@@ -1,0 +1,613 @@
+/* UserModal Styles */
+
+.user-modal {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalSlideIn 0.25s ease-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--neutral-200);
+  background: var(--neutral-50);
+  z-index: 1;
+  position: sticky;
+  top: 0;
+}
+
+.user-modal .header-content {
+  display: flex;
+  gap: 16px;
+}
+
+.user-modal .header-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--primary-400), var(--primary-600));
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-modal .header-icon svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+.user-modal .header-content h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--neutral-900);
+  margin: 0 0 4px 0;
+}
+
+.user-modal .header-content p {
+  font-size: 14px;
+  color: var(--neutral-500);
+  margin: 0;
+}
+
+.user-modal .close-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--neutral-100);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--neutral-500);
+  flex-shrink: 0;
+}
+
+.user-modal .close-btn:hover {
+  background: var(--neutral-200);
+  color: var(--neutral-700);
+}
+
+.user-modal .close-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.user-modal .modal-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.user-modal .form-section {
+  margin-bottom: 24px;
+}
+
+.user-modal .section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--neutral-700);
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--neutral-100);
+}
+
+.user-modal .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.user-modal .form-group {
+  margin-bottom: 16px;
+}
+
+.user-modal .form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--neutral-700);
+  margin-bottom: 6px;
+}
+
+.user-modal .form-group input,
+.user-modal .form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--neutral-300);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--neutral-800);
+  transition: all 0.2s ease;
+}
+
+.user-modal .form-group input:focus,
+.user-modal .form-group select:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-50);
+}
+
+.user-modal .form-group input.error {
+  border-color: var(--error-500);
+}
+
+.user-modal .error-text {
+  display: block;
+  font-size: 12px;
+  color: var(--error-500);
+  margin-top: 4px;
+}
+
+.user-modal .form-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--error-50);
+  color: var(--error-700);
+  border: 1px solid var(--error-200);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.user-modal .form-error-banner svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--error-500);
+}
+
+.user-modal .required {
+  color: var(--error-500);
+}
+
+/* ── Job Title Combobox ─────────────────────────────── */
+.user-modal .title-combobox {
+  position: relative;
+}
+
+.user-modal .title-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.user-modal .title-input-icon {
+  position: absolute;
+  left: 11px;
+  width: 15px;
+  height: 15px;
+  color: var(--neutral-400);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.user-modal .title-input-wrap input {
+  padding-left: 34px !important;
+  padding-right: 32px !important;
+}
+
+.user-modal .title-clear-btn {
+  position: absolute;
+  right: 9px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: var(--neutral-200);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--neutral-500);
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.user-modal .title-clear-btn:hover {
+  background: var(--neutral-300);
+  color: var(--neutral-700);
+}
+.user-modal .title-clear-btn svg {
+  width: 11px;
+  height: 11px;
+}
+
+.user-modal .title-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid var(--neutral-200);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 50;
+  max-height: 210px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.user-modal .title-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  color: var(--neutral-700);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.13s;
+}
+.user-modal .title-dropdown-item svg:first-child {
+  width: 14px;
+  height: 14px;
+  color: var(--neutral-400);
+  flex-shrink: 0;
+}
+.user-modal .title-dropdown-item:hover,
+.user-modal .title-dropdown-item.active {
+  background: var(--primary-50);
+  color: var(--primary-700);
+}
+.user-modal .title-dropdown-item.active svg:first-child {
+  color: var(--primary-500);
+}
+
+.user-modal .title-dropdown-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-modal .title-dropdown-dept {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  background: var(--primary-100, #dbeafe);
+  color: var(--primary-700, #1d4ed8);
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.user-modal .title-check {
+  width: 13px;
+  height: 13px;
+  color: var(--primary-600);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.user-modal .title-dropdown-empty {
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--neutral-400);
+  text-align: center;
+}
+.user-modal .title-dropdown-empty strong {
+  color: var(--neutral-600);
+}
+
+/* Disabled combobox (job title before dept is picked) */
+.user-modal .combobox-disabled .title-input-wrap {
+  background: var(--neutral-50);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.user-modal .combobox-disabled input {
+  cursor: not-allowed;
+  color: var(--neutral-400);
+}
+
+/* Small hint inline next to label */
+.user-modal .field-hint-inline {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--neutral-400);
+  font-style: italic;
+}
+
+/* Loading spinner dot inside input */
+.user-modal .title-loading-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--primary-200);
+  border-top-color: var(--primary-500);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Loading row inside dropdown */
+.user-modal .title-dropdown-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--neutral-500);
+}
+
+/* ── Role Card Grid ─────────────────────────────────── */
+.user-modal .role-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.user-modal .role-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border: 2px solid var(--neutral-200);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+  user-select: none;
+}
+
+.user-modal .role-card:hover {
+  border-color: var(--primary-300);
+  background: var(--primary-50);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+  transform: translateY(-1px);
+}
+
+.user-modal .role-card.selected {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+
+.user-modal .role-card input[type="radio"] {
+  display: none;
+}
+
+.user-modal .role-card-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.user-modal .role-card-icon svg {
+  width: 18px;
+  height: 18px;
+  color: var(--role-icon-color, #64748b);
+  transition: color 0.18s;
+}
+
+.user-modal .role-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-modal .role-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--neutral-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-modal .role-card-desc {
+  font-size: 11px;
+  color: var(--neutral-500);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.user-modal .role-card-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  background: var(--primary-600);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: role-check-pop 0.2s ease-out;
+}
+
+.user-modal .role-card-check svg {
+  width: 11px;
+  height: 11px;
+  color: #fff;
+}
+
+@keyframes role-check-pop {
+  0%   { transform: scale(0); opacity: 0; }
+  70%  { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Loading skeleton */
+.user-modal .role-cards-loading {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.user-modal .role-card-skeleton {
+  height: 90px;
+  border-radius: 12px;
+  background: var(--neutral-100, #f3f4f6);
+  animation: role-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes role-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+@media (max-width: 480px) {
+  .user-modal .role-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.user-modal .checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 12px 16px;
+  border: 1px solid var(--neutral-200);
+  border-radius: 10px;
+}
+
+.user-modal .checkbox-label input {
+  margin-top: 2px;
+}
+
+.user-modal .checkbox-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-modal .checkbox-text strong {
+  font-size: 14px;
+  color: var(--neutral-800);
+}
+
+.user-modal .checkbox-text span {
+  font-size: 12px;
+  color: var(--neutral-500);
+}
+
+.user-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 28px;
+  border-top: 1px solid var(--neutral-200);
+  background: var(--neutral-50);
+  z-index: 1;
+}
+
+.user-modal .btn-secondary {
+  padding: 10px 20px;
+  background: white;
+  color: var(--neutral-700);
+  border: 1px solid var(--neutral-300);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-modal .btn-secondary:hover {
+  background: var(--neutral-50);
+}
+
+.user-modal .btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--primary-600);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-modal .btn-primary:hover {
+  background: var(--primary-700);
+}
+
+.user-modal .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.user-modal .btn-primary svg {
+  width: 16px;
+  height: 16px;
+}
+
+.user-modal .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 4px;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .user-modal {
+    max-height: calc(100vh - 32px);
+    border-radius: 16px;
+  }
+
+  .user-modal .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .user-modal .modal-footer {
+    flex-direction: column;
+  }
+
+  .user-modal .btn-secondary,
+  .user-modal .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
