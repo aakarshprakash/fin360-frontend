@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { createRoot } from 'react-dom/client';
 import Layout from '../../components/Layout';
-import { getInvoice, updateInvoice, updateInvoiceStatus, recordInvoicePayment, deleteInvoice, getPaymentMethods, getAccountingSettings } from '../../utils/accountingApi';
+import { getInvoice, updateInvoice, updateInvoiceStatus, recordInvoicePayment, deleteInvoice } from '../../utils/accountingApi';
+import { loadInvoicePrintData, PRINT_PAGE_CSS } from '../../utils/invoicePrintData';
 import useSnackbar from '../../utils/useSnackbar';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
@@ -556,6 +557,7 @@ function InvoiceDetail() {
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [companyInfo, setCompanyInfo] = useState(null);
   const [paymentMethodsList, setPaymentMethodsList] = useState([]);
+  const [printTemplate, setPrintTemplate] = useState('default');
 
   // Normalize API response to match frontend expectations
   const normalizeInvoice = (inv) => {
@@ -628,19 +630,11 @@ function InvoiceDetail() {
   useEffect(() => {
     let cancelled = false;
     const fetchPrintData = async () => {
-      try {
-        const [settingsRes, methodsRes] = await Promise.allSettled([getAccountingSettings(), getPaymentMethods()]);
-        if (cancelled) return;
-        if (settingsRes.status === 'fulfilled') {
-          const sRaw = settingsRes.value.data?.data || settingsRes.value.data;
-          if (sRaw?.company) setCompanyInfo(sRaw.company);
-        }
-        if (methodsRes.status === 'fulfilled') {
-          const mRaw = methodsRes.value.data?.data || methodsRes.value.data;
-          const mList = mRaw?.methods || (Array.isArray(mRaw) ? mRaw : []);
-          setPaymentMethodsList(Array.isArray(mList) ? mList : []);
-        }
-      } catch { /* fallback to demo data in print component */ }
+      const data = await loadInvoicePrintData();
+      if (cancelled) return;
+      if (data.company) setCompanyInfo(data.company);
+      setPaymentMethodsList(data.methods);
+      setPrintTemplate(data.template);
     };
     fetchPrintData();
     return () => { cancelled = true; };
@@ -666,18 +660,13 @@ function InvoiceDetail() {
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${invoice.invoiceNumber} — Invoice</title>
+<title>${invoice.invoiceNumber}</title>
 ${stylesHTML}
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { background: var(--neutral-100); margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased; }
   .inv-print { background: #fff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin: 24px auto; border-radius: 2px; }
-  @media print {
-    html, body { background: #fff; }
-    .inv-print { box-shadow: none; margin: 0; padding: 0; border-radius: 0; max-width: 100%; }
-    .no-print { display: none !important; }
-  }
-  @page { size: A4; margin: 12mm 14mm; }
+  ${PRINT_PAGE_CSS}
 </style>
 </head><body>
 <div class="no-print" style="display:flex;gap:10px;justify-content:center;padding:14px;background:#fff;border-bottom:1px solid var(--neutral-200);">
@@ -698,13 +687,14 @@ ${stylesHTML}
           invoice={invoice}
           company={companyInfo}
           paymentMethods={paymentMethodsList}
+          template={printTemplate}
         />
       );
     }
 
     // Focus the new window
     printWindow.focus();
-  }, [invoice, companyInfo, paymentMethodsList]);
+  }, [invoice, companyInfo, paymentMethodsList, printTemplate]);
 
   const handleSavePDF = useCallback(() => {
     // Same flow — user selects "Save as PDF" in the print dialog
@@ -924,6 +914,7 @@ ${stylesHTML}
                   invoice={invoice}
                   company={companyInfo}
                   paymentMethods={paymentMethodsList}
+                  template={printTemplate}
                 />
               </div>
             </div>

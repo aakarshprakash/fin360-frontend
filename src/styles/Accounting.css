@@ -1251,6 +1251,7 @@
 }
 .qtn-co-line { font-size: 11px; color: var(--neutral-500); margin: 0; line-height: 1.6; }
 .qtn-state-line { text-align: center; font-size: 10.5px; color: var(--neutral-500); margin: 6px 0 0; }
+.qtn-taxid-line { text-align: center; font-size: 10.5px; font-weight: 600; color: var(--neutral-700); letter-spacing: 0.02em; margin: 3px 0 0; white-space: pre-wrap; }
 .qtn-not-tax-note { text-align: center; font-size: 9.5px; color: var(--neutral-400); font-style: italic; margin: 4px 0 12px; }
 
 .qtn-title-bar {
@@ -1454,4 +1455,46 @@
     size: A4;
     margin: 12mm 14mm;
   }
+}
+
+/* ── Invoice template picker (Settings › Invoice Template) ─────────────── */
+.acc-template-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.acc-template-option {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--neutral-200);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.acc-template-option:hover { border-color: var(--primary-200); }
+.acc-template-option.is-selected {
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px var(--primary-50);
+}
+.acc-template-option input { margin-top: 3px; accent-color: var(--primary-600); }
+.acc-template-option strong { display: block; font-size: 14px; color: var(--neutral-800); }
+.acc-template-option small { display: block; margin-top: 3px; font-size: 12.5px; line-height: 1.45; color: var(--neutral-500); }
+.acc-template-preview {
+  margin-top: 16px;
+  padding: 20px;
+  border-radius: 12px;
+  background: var(--neutral-100);
+  max-height: 560px;
+  overflow: auto;
+}
+.acc-template-preview-page {
+  background: #fff;
+  box-shadow: var(--shadow-md);
+  border-radius: 4px;
+  max-width: 820px;
+  margin: 0 auto;
+  pointer-events: none;
 }

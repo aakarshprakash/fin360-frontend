@@ -1,8 +1,10 @@
 // Invoice Print View — matches the classic Indian distributor invoice format
 // used across Quotation/Proforma Invoice/Invoice (S.No/Description/HSN-SAC/Qty/Rate/
 // Amount table, structured Terms & Conditions, CIN/GSTIN/PAN + signature footer).
-// Nothing here is hardcoded — company details come from Accounting Settings > Company.
+// Nothing here is hardcoded — company details come from Settings > Business & Tax Details.
+// Layout variations (Standard / Letterhead) come from invoiceTemplates.js.
 import { API_ORIGIN } from '../../utils/api';
+import { resolveInvoiceTemplate } from './invoiceTemplates';
 
 const defaultCompany = {
   companyName: '', address: '', phone: '', mobile: '', email: '', website: '',
@@ -27,8 +29,9 @@ function numberToWords(num) {
   return convert(Math.round(Math.abs(num))) + ' Rupees Only';
 }
 
-function InvoicePrintView({ invoice, company, paymentMethods }) {
+function InvoicePrintView({ invoice, company, paymentMethods, template }) {
   const co = { ...defaultCompany, ...(company || {}) };
+  const tpl = resolveInvoiceTemplate(template);
   const methodsRaw = Array.isArray(paymentMethods) ? paymentMethods : (Array.isArray(paymentMethods?.methods) ? paymentMethods.methods : defaultPaymentMethods);
   const methods = methodsRaw.filter(m => m.enabled !== false);
 
@@ -45,6 +48,12 @@ function InvoicePrintView({ invoice, company, paymentMethods }) {
 
   const contactLine = [co.phone && `Phone No: ${co.phone}`, co.mobile && `Mobile No: ${co.mobile}`].filter(Boolean).join('   ');
   const webLine = [co.email && `email: ${co.email}`, co.website && `Web: ${co.website}`].filter(Boolean).join('   ');
+  const taxIds = [
+    co.gstNumber && `GSTIN: ${co.gstNumber}`,
+    co.pan && `PAN: ${co.pan}`,
+    co.cin && `CIN: ${co.cin}`,
+  ].filter(Boolean);
+  const showTerms = Boolean(co.bankDetails || invoice.notes || invoice.termsAndConditions || tpl.showDefaultTerms);
 
   return (
     <div className="inv-print qtn-print">
@@ -60,6 +69,9 @@ function InvoicePrintView({ invoice, company, paymentMethods }) {
       </header>
       {(co.state || co.stateCode) && (
         <p className="qtn-state-line">State: {co.state || '—'}{co.stateCode ? `, ${co.stateCode}` : ''}</p>
+      )}
+      {tpl.taxIdsInLetterhead && taxIds.length > 0 && (
+        <p className="qtn-taxid-line">{taxIds.join('   |   ')}</p>
       )}
 
       <div className="qtn-title-bar">Tax Invoice</div>
@@ -81,7 +93,7 @@ function InvoicePrintView({ invoice, company, paymentMethods }) {
             <tr><td className="qtn-mt-label">Invoice Date</td><td className="qtn-mt-colon">:</td><td className="qtn-mt-value">{fmtDate(invoice.date)}</td></tr>
             <tr><td className="qtn-mt-label">Due Date</td><td className="qtn-mt-colon">:</td><td className="qtn-mt-value">{fmtDate(invoice.dueDate)}</td></tr>
             {curr !== 'INR' && <tr><td className="qtn-mt-label">Currency</td><td className="qtn-mt-colon">:</td><td className="qtn-mt-value">{curr}</td></tr>}
-            {co.gstNumber && <tr><td className="qtn-mt-label">Seller GSTIN</td><td className="qtn-mt-colon">:</td><td className="qtn-mt-value">{co.gstNumber}</td></tr>}
+            {tpl.sellerGstinInDetails && co.gstNumber && <tr><td className="qtn-mt-label">Seller GSTIN</td><td className="qtn-mt-colon">:</td><td className="qtn-mt-value">{co.gstNumber}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -137,7 +149,7 @@ function InvoicePrintView({ invoice, company, paymentMethods }) {
       </div>
 
       {/* Payment Information */}
-      {methods.length > 0 && (
+      {tpl.showPaymentMethods && methods.length > 0 && (
         <div className="qtn-terms-block">
           <p className="qtn-terms-title">Payment Information :</p>
           <table className="qtn-terms-table">
@@ -160,9 +172,9 @@ function InvoicePrintView({ invoice, company, paymentMethods }) {
       )}
 
       {/* Terms & Conditions */}
-      {(co.bankDetails || invoice.notes || invoice.termsAndConditions) && (
+      {showTerms && (
         <div className="qtn-terms-block">
-          <p className="qtn-terms-title">Terms &amp; Conditions :</p>
+          {tpl.bankSectionTitle && <p className="qtn-terms-title">{tpl.bankSectionTitle} :</p>}
           {co.bankDetails && (
             <table className="qtn-terms-table">
               <tbody>
@@ -175,18 +187,22 @@ function InvoicePrintView({ invoice, company, paymentMethods }) {
             </table>
           )}
           {invoice.notes && <p className="qtn-extra-note"><strong>Notes:</strong> {invoice.notes}</p>}
-          <p className="qtn-extra-note">{invoice.termsAndConditions || 'Payment is due within 30 days of the invoice date. Late payments may be subject to interest charges.'}</p>
+          {invoice.termsAndConditions
+            ? <p className="qtn-extra-note">{invoice.termsAndConditions}</p>
+            : tpl.showDefaultTerms && <p className="qtn-extra-note">Payment is due within 30 days of the invoice date. Late payments may be subject to interest charges.</p>}
         </div>
       )}
 
       {/* Footer band — CIN/GSTIN/PAN + Signature */}
       <div className="qtn-footer-band">
         <table className="qtn-footer-left-table">
+          {tpl.taxIdsInFooter && (
           <tbody>
             {co.cin && <tr><td className="qtn-tt-label">CIN</td><td className="qtn-tt-colon">:</td><td className="qtn-tt-value">{co.cin}</td></tr>}
             {co.gstNumber && <tr><td className="qtn-tt-label">GSTIN</td><td className="qtn-tt-colon">:</td><td className="qtn-tt-value">{co.gstNumber}</td></tr>}
             {co.pan && <tr><td className="qtn-tt-label">PAN No</td><td className="qtn-tt-colon">:</td><td className="qtn-tt-value">{co.pan}</td></tr>}
           </tbody>
+          )}
         </table>
         <div className="qtn-footer-right">
           <p className="qtn-for-company">For {co.companyName || 'the Company'}</p>

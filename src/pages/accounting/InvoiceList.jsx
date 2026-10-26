@@ -3,7 +3,8 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createRoot } from 'react-dom/client';
 import Layout from '../../components/Layout';
-import { getInvoices, getInvoice, deleteInvoice, getAccountingSettings, getPaymentMethods } from '../../utils/accountingApi';
+import { getInvoices, getInvoice, deleteInvoice } from '../../utils/accountingApi';
+import { loadInvoicePrintData, PRINT_PAGE_CSS } from '../../utils/invoicePrintData';
 import { useAccountingFetch } from '../../utils/useAccountingFetch';
 import useSnackbar from '../../utils/useSnackbar';
 import Pagination from '../../components/accounting/Pagination';
@@ -64,22 +65,16 @@ function InvoiceList() {
   const [printingId, setPrintingId] = useState(null);
   const companyRef = useRef(null);
   const methodsRef = useRef(null);
+  const templateRef = useRef('default');
   // Prefetch company info & payment methods for quick print
   useEffect(() => {
     let cancelled = false;
     const fetchPrintData = async () => {
-      try {
-        const [sRes, mRes] = await Promise.allSettled([getAccountingSettings(), getPaymentMethods()]);
-        if (cancelled) return;
-        if (sRes.status === 'fulfilled') {
-          const raw = sRes.value.data?.data || sRes.value.data;
-          if (raw?.company) companyRef.current = raw.company;
-        }
-        if (mRes.status === 'fulfilled') {
-          const mRaw = mRes.value.data?.data || mRes.value.data;
-          methodsRef.current = mRaw?.methods || (Array.isArray(mRaw) ? mRaw : []);
-        }
-      } catch { /* fallback */ }
+      const data = await loadInvoicePrintData();
+      if (cancelled) return;
+      companyRef.current = data.company;
+      methodsRef.current = data.methods;
+      templateRef.current = data.template;
     };
     fetchPrintData();
     return () => { cancelled = true; };
@@ -182,14 +177,13 @@ function InvoiceList() {
 
       printWindow.document.write(`<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${inv.invoiceNumber} — Invoice</title>
+<title>${inv.invoiceNumber}</title>
 ${stylesHTML}
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{background:var(--neutral-100);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased}
   .inv-print{background:#fff!important;box-shadow:0 1px 3px rgba(0,0,0,.08);margin:24px auto;border-radius:2px}
-  @media print{html,body{background:#fff}.inv-print{box-shadow:none;margin:0;padding:0;border-radius:0;max-width:100%}.no-print{display:none!important}}
-  @page{size:A4;margin:12mm 14mm}
+  ${PRINT_PAGE_CSS}
 </style></head><body>
 <div class="no-print" style="display:flex;gap:10px;justify-content:center;padding:14px;background:#fff;border-bottom:1px solid var(--neutral-200)">
   <button onclick="window.print()" style="padding:9px 24px;background:var(--neutral-800);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">Print</button>
@@ -202,7 +196,7 @@ ${stylesHTML}
       const printRoot = printWindow.document.getElementById('print-root');
       if (printRoot) {
         const root = createRoot(printRoot);
-        root.render(<InvoicePrintView invoice={inv} company={companyRef.current} paymentMethods={methodsRef.current} />);
+        root.render(<InvoicePrintView invoice={inv} company={companyRef.current} paymentMethods={methodsRef.current} template={templateRef.current} />);
       }
       printWindow.focus();
     } catch { /* ignore */ }
