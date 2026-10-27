@@ -503,7 +503,9 @@
 .bx-pre { white-space: pre-line; }
 .bx-pre-inline { white-space: pre-line; }
 
-/* Letterhead: logo beside the text, text centred in the space left */
+/* Letterhead: logo in an outer column, text centred on the full box width.
+   The two outer columns share the leftover space equally, so the text is
+   truly centred; when it is too wide it only gives up what the logo needs. */
 .bx-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -513,9 +515,12 @@
   padding: 2mm 3mm 1.5mm;
 }
 
-.bx-head.has-logo { grid-template-columns: auto minmax(0, 1fr); }
-.bx-logo-right .bx-head.has-logo { grid-template-columns: minmax(0, 1fr) auto; }
+.bx-head.has-logo { grid-template-columns: 1fr auto 1fr; }
+.bx-head.has-logo > .bx-logo { grid-column: 1; justify-self: start; }
+.bx-head.has-logo > .bx-co { grid-column: 2; }
+.bx-logo-right .bx-head.has-logo > .bx-logo { grid-column: 3; justify-self: end; }
 .bx-logo-center .bx-head.has-logo { grid-template-columns: minmax(0, 1fr); }
+.bx-logo-center .bx-head.has-logo > .bx-co { grid-column: 1; }
 
 .bx-logo {
   height: var(--logo-h);
@@ -772,7 +777,6 @@
   font-size: calc(var(--inv-fs) * 0.9);
   color: #374151;
 }
-.bx-logo-right .bx-head > .bx-logo { order: 2; }
 
 /* Long invoices: never split an item row or a summary block across pages */
 .bx-items tbody tr,
