@@ -2,14 +2,12 @@
 // settings object owned by AccountingSettings — { invoiceTheme, layout,
 // termsAndConditions, footerText, … } — and shows a live A4 preview. Saving
 // stays with the page's "Save Template" button.
-import { useLayoutEffect, useRef, useState } from 'react';
 import InvoicePrintView from './InvoicePrintView';
+import { Panel, ScaledPreview, Segmented, TextField, Toggle } from './TemplateBuilderParts';
 import {
-  ACCENT_SWATCHES, INVOICE_TEMPLATES, isCustomised, resolveInvoiceLayout,
+  ACCENT_SWATCHES, INVOICE_TEMPLATES, MAX_CUSTOM_FIELDS, isCustomised, newFieldId, resolveInvoiceLayout,
 } from './invoiceTemplates';
 import '../../styles/InvoiceTemplateBuilder.css';
-
-const A4_PX = { width: 794, height: 1123 }; // 210 × 297 mm at 96 dpi
 
 const SAMPLE_INVOICE = {
   invoiceNumber: 'INV-00042',
@@ -19,95 +17,61 @@ const SAMPLE_INVOICE = {
   customerAddress: 'Fort Road\nKannur 670001',
   customerPhone: '98470 12345',
   customerGst: '32AABCM1234F1Z5',
+  customerEmail: 'accounts@malabardiagnostics.in',
   customerState: 'Kerala',
-  notes: 'Delivered to the clinic reception.',
+  customerContact: 'Mr. Anil Kumar – 98470 12345',
+  notes: 'Payment 100% against delivery.',
   items: [
-    { description: 'Ankle Cuff for Doppler', hsnCode: '90189019', quantity: 2, unitPrice: 1250, taxRate: 5, taxAmount: 125, total: 2625 },
-    { description: 'Annual maintenance visit', hsnCode: '998719', quantity: 1, unitPrice: 4000, taxRate: 18, taxAmount: 720, total: 4720 },
+    { description: 'Ankle Cuff for Doppler', hsnCode: '90189019', quantity: 2, unit: 'NOS', unitPrice: 1250, taxRate: 5, taxAmount: 125, total: 2625 },
+    { description: 'Annual maintenance visit', hsnCode: '998719', quantity: 1, unit: 'SET', unitPrice: 4000, taxRate: 18, taxAmount: 720, total: 4720 },
   ],
   subtotal: 6500, tax: 845, total: 7345, amountPaid: 2000,
 };
 
-function Toggle({ label, checked, onChange, hint }) {
-  return (
-    <label className="itb-toggle">
-      <span>
-        {label}
-        {hint && <small>{hint}</small>}
-      </span>
-      <input type="checkbox" role="switch" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
-      <i aria-hidden="true" />
-    </label>
-  );
-}
+const SAMPLE_FIELD_VALUES = { orderref: 'email/140926 – 14-09-2026', lotcode: 'LT-2609', lrno: '' };
 
-function Segmented({ label, value, options, onChange }) {
+// Custom fields: name + where it prints; values are typed on each invoice
+function FieldsEditor({ fields, onChange }) {
+  const update = (idx, patch) => onChange(fields.map((f, i) => (i === idx ? { ...f, ...patch } : f)));
   return (
-    <div className="itb-field">
-      <span className="itb-label">{label}</span>
-      <div className="itb-segmented" role="radiogroup" aria-label={label}>
-        {options.map(([v, text]) => (
+    <div className="itb-fields">
+      {fields.map((f, idx) => (
+        <div className="itb-fieldrow" key={f.id}>
+          <input
+            type="text"
+            value={f.label}
+            maxLength={40}
+            placeholder="Field name"
+            aria-label={`Custom field ${idx + 1} name`}
+            onChange={(e) => update(idx, { label: e.target.value })}
+          />
+          <select
+            value={f.position}
+            aria-label={`Where ${f.label || 'this field'} prints`}
+            onChange={(e) => update(idx, { position: e.target.value })}
+          >
+            <option value="details">Beside invoice no.</option>
+            <option value="footer">Above signature</option>
+          </select>
           <button
             type="button"
-            key={v}
-            role="radio"
-            aria-checked={value === v}
-            className={value === v ? 'is-on' : ''}
-            onClick={() => onChange(v)}
+            className="itb-remove"
+            aria-label={`Remove ${f.label || 'field'}`}
+            onClick={() => onChange(fields.filter((_, i) => i !== idx))}
           >
-            {text}
+            ✕
           </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TextField({ label, value, onChange, maxLength, placeholder, multiline }) {
-  const Input = multiline ? 'textarea' : 'input';
-  return (
-    <label className="itb-field">
-      <span className="itb-label">{label}</span>
-      <Input
-        type={multiline ? undefined : 'text'}
-        value={value || ''}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        rows={multiline ? 3 : undefined}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </label>
-  );
-}
-
-function Panel({ title, children, open }) {
-  return (
-    <details className="itb-panel" open={open}>
-      <summary>{title}</summary>
-      <div className="itb-panel-body">{children}</div>
-    </details>
-  );
-}
-
-// A4 sheet scaled to the available width
-function ScaledPreview({ children }) {
-  const ref = useRef(null);
-  const [scale, setScale] = useState(0.7);
-  useLayoutEffect(() => {
-    if (!ref.current) return undefined;
-    const ro = new ResizeObserver(([entry]) => {
-      setScale(Math.min(1, (entry.contentRect.width - 2) / A4_PX.width));
-    });
-    ro.observe(ref.current);
-    return () => ro.disconnect();
-  }, []);
-  return (
-    <div className="itb-preview" ref={ref}>
-      <div className="itb-preview-frame" style={{ width: A4_PX.width * scale, height: A4_PX.height * scale }}>
-        <div className="itb-preview-page" style={{ transform: `scale(${scale})` }}>
-          {children}
         </div>
-      </div>
+      ))}
+      {fields.length < MAX_CUSTOM_FIELDS && (
+        <button
+          type="button"
+          className="itb-link"
+          onClick={() => onChange([...fields, { id: newFieldId(), label: '', position: 'details' }])}
+        >
+          + Add field
+        </button>
+      )}
     </div>
   );
 }
@@ -121,6 +85,12 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
     layout: { ...L, [section]: { ...L[section], [key]: value } },
   });
   const setText = (key) => (value) => onChange({ ...template, [key]: value });
+  const setFields = (fields) => onChange({ ...template, layout: { ...L, fields } });
+  const boxed = L.style.design === 'boxed';
+  const sampleInvoice = {
+    ...SAMPLE_INVOICE,
+    extraFields: Object.fromEntries((L.fields || []).map((f) => [f.id, SAMPLE_FIELD_VALUES[f.id] ?? (f.label ? `Sample ${f.label.toLowerCase()}` : '')])),
+  };
 
   const choosePreset = (id) => {
     if (id === template.invoiceTheme && !customised) return;
@@ -164,6 +134,8 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
         </div>
 
         <Panel title="Brand & style" open>
+          <Segmented label="Design" value={L.style.design} onChange={set('style', 'design')}
+            options={[['modern', 'Modern'], ['boxed', 'Boxed (ruled)']]} />
           <div className="itb-field">
             <span className="itb-label">Accent colour</span>
             <div className="itb-swatches">
@@ -192,8 +164,10 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
             options={[['modern', 'Modern'], ['classic', 'Classic'], ['clean', 'Clean']]} />
           <Segmented label="Text size" value={L.style.textSize} onChange={set('style', 'textSize')}
             options={[['small', 'Small'], ['normal', 'Normal'], ['large', 'Large']]} />
-          <Segmented label="Item table" value={L.style.tableStyle} onChange={set('style', 'tableStyle')}
-            options={[['solid', 'Solid'], ['light', 'Light'], ['lines', 'Lines']]} />
+          {!boxed && (
+            <Segmented label="Item table" value={L.style.tableStyle} onChange={set('style', 'tableStyle')}
+              options={[['solid', 'Solid'], ['light', 'Light'], ['lines', 'Lines']]} />
+          )}
         </Panel>
 
         <Panel title="Logo">
@@ -211,6 +185,8 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
         <Panel title="Header">
           <TextField label="Document title" value={L.header.title} maxLength={40} onChange={set('header', 'title')} placeholder="Tax Invoice" />
           <TextField label="Subtitle (leave empty to hide)" value={L.header.subtitle} maxLength={60} onChange={set('header', 'subtitle')} />
+          <TextField label="Lines under company name" value={L.header.tagline} maxLength={300} multiline onChange={set('header', 'tagline')}
+            placeholder="e.g. (Under Rule 7 of GST Rules 2017)" />
           <Toggle label="Company address" checked={L.header.showAddress} onChange={set('header', 'showAddress')} />
           <Toggle label="Phone & email" checked={L.header.showContact} onChange={set('header', 'showContact')} />
           <Toggle label="State" checked={L.header.showState} onChange={set('header', 'showState')} />
@@ -220,13 +196,30 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
 
         <Panel title="Customer & details">
           <TextField label="Customer heading" value={L.labels.billTo} maxLength={30} onChange={set('labels', 'billTo')} placeholder="Bill To" />
+          <Toggle label="Ship To" checked={L.details.shipTo} onChange={set('details', 'shipTo')}
+            hint="Typed on the invoice; same as Bill To when left empty" />
+          {L.details.shipTo && (
+            <TextField label="Ship To heading" value={L.labels.shipTo} maxLength={30} onChange={set('labels', 'shipTo')} placeholder="Ship To" />
+          )}
           <Toggle label="Customer GSTIN" checked={L.details.customerGstin} onChange={set('details', 'customerGstin')} />
+          <Toggle label="Customer PAN" checked={L.details.customerPan} onChange={set('details', 'customerPan')}
+            hint="Taken from the GSTIN when not entered" />
+          <Toggle label="Contact person" checked={L.details.contactPerson} onChange={set('details', 'contactPerson')} />
+          <Toggle label="Due date" checked={L.details.dueDate} onChange={set('details', 'dueDate')} />
           <Toggle label="Place of supply" checked={L.details.placeOfSupply} onChange={set('details', 'placeOfSupply')} />
           <Toggle label="Seller GSTIN in details" checked={L.details.sellerGstin} onChange={set('details', 'sellerGstin')} />
         </Panel>
 
+        <Panel title="Custom fields">
+          <p className="itb-hint">Extra boxes such as Order No &amp; Date, Lot Code, LR No or Vehicle No. You fill them in on each invoice.</p>
+          <FieldsEditor fields={L.fields || []} onChange={setFields} />
+        </Panel>
+
         <Panel title="Item columns">
+          <TextField label="Description heading" value={L.labels.description} maxLength={40} onChange={set('labels', 'description')} placeholder="Description" />
           <Toggle label="HSN / SAC" checked={L.columns.hsn} onChange={set('columns', 'hsn')} />
+          <Toggle label="Unit (UOM)" checked={L.columns.uom} onChange={set('columns', 'uom')}
+            hint="NOS, KG, BOX… from the product, or typed per line" />
           <Toggle label="Taxable value" checked={L.columns.taxableValue} onChange={set('columns', 'taxableValue')} />
           <Toggle label="GST %" checked={L.columns.gstRate} onChange={set('columns', 'gstRate')} />
           <Toggle label="GST amount" checked={L.columns.gstAmount} onChange={set('columns', 'gstAmount')}
@@ -252,11 +245,29 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
             </>
           )}
           <Toggle label="Invoice notes" checked={L.sections.notes} onChange={set('sections', 'notes')} hint="Notes typed on each invoice" />
+          {L.sections.notes && (
+            <TextField label="Notes heading" value={L.labels.notes} maxLength={30} onChange={set('labels', 'notes')} placeholder="Remarks" />
+          )}
+          <Toggle label="Declaration" checked={L.sections.declaration} onChange={set('sections', 'declaration')} />
+          {L.sections.declaration && (
+            <TextField label="Declaration text" value={L.texts.declaration} maxLength={600} multiline onChange={set('texts', 'declaration')} />
+          )}
+          <Toggle label="Receiver’s note" checked={L.sections.receivedNote} onChange={set('sections', 'receivedNote')}
+            hint="Printed beside the signature" />
+          {L.sections.receivedNote && (
+            <>
+              <TextField label="Note" value={L.texts.receivedNote} maxLength={150} onChange={set('texts', 'receivedNote')}
+                placeholder="Received the above goods in good condition" />
+              <TextField label="Second line" value={L.texts.closingNote} maxLength={150} onChange={set('texts', 'closingNote')}
+                placeholder="Please return one copy with seal & signature" />
+            </>
+          )}
           <Toggle label="Footer message" checked={L.sections.footerMessage} onChange={set('sections', 'footerMessage')} />
           {L.sections.footerMessage && (
             <TextField label="Message" value={template.footerText} maxLength={200} onChange={setText('footerText')} placeholder="Thank you for your business!" />
           )}
           <Toggle label="“Computer-generated invoice” note" checked={L.sections.computerGenerated} onChange={set('sections', 'computerGenerated')} />
+          {boxed && <Toggle label="Page number" checked={L.sections.pageNumber} onChange={set('sections', 'pageNumber')} />}
         </Panel>
 
         <Panel title="Signature">
@@ -274,7 +285,7 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
       <div className="itb-preview-col">
         <p className="itb-preview-note">Live preview with sample data · A4</p>
         <ScaledPreview>
-          <InvoicePrintView invoice={SAMPLE_INVOICE} company={company} paymentMethods={methods} template={{ ...template, layout: L }} />
+          <InvoicePrintView invoice={sampleInvoice} company={company} paymentMethods={methods} template={{ ...template, layout: L }} />
         </ScaledPreview>
       </div>
     </div>

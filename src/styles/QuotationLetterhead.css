@@ -1,0 +1,383 @@
+/* ============================================================================
+   Letterhead quotation (QuotationLetterheadView, qlh-*). A4, black ink, the
+   company's header/footer artwork edge to edge.
+   ============================================================================ */
+
+.inv-print.qlh-doc {
+  --qlh-ink: #111827;
+  --qlh-rule: 0.75pt solid #111827;
+  width: 210mm;
+  max-width: 210mm;
+  min-height: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10pt;
+  line-height: 1.4;
+  color: var(--qlh-ink);
+  background: #fff;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.qlh-doc *,
+.qlh-doc *::before,
+.qlh-doc *::after {
+  box-sizing: border-box;
+}
+
+.qlh-doc p,
+.qlh-doc h1,
+.qlh-doc h2,
+.qlh-doc ul,
+.qlh-doc ol {
+  margin: 0;
+}
+
+.qlh-pre { white-space: pre-line; }
+
+/* ── Sheets (screen) ──────────────────────────────────────────────────── */
+.qlh-print-fixed { display: none; }
+
+.qlh-sheet {
+  display: flex;
+  flex-direction: column;
+  min-height: 297mm;
+}
+
+/* Page gap between sheets in the on-screen preview */
+.qlh-sheet + .qlh-sheet { border-top: 8mm solid #E5E7EB; }
+
+.qlh-flow {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.qlh-flow > thead,
+.qlh-flow > tfoot { display: none; }
+
+.qlh-flow > tbody > tr > td { padding: 0; }
+
+.qlh-content { padding: 5mm 12mm 6mm; }
+
+.qlh-foot { margin-top: auto; }
+
+/* ── Header & footer ──────────────────────────────────────────────────── */
+.qlh-art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.qlh-cohead {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8mm;
+  padding: 6mm 12mm 6mm;
+}
+
+.qlh-cohead::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.6mm;
+  background: linear-gradient(90deg, #1E3A8A, #2563EB 55%, #7DD3FC);
+}
+
+.qlh-cohead-brand img {
+  display: block;
+  height: 20mm;
+  max-width: 95mm;
+  object-fit: contain;
+}
+
+.qlh-cohead-brand strong {
+  font-size: 18pt;
+  letter-spacing: 0.02em;
+}
+
+.qlh-cohead-contact {
+  padding-left: 6mm;
+  border-left: 0.75pt solid #94A3B8;
+  font-size: 9pt;
+  color: #1F2937;
+  max-width: 78mm;
+}
+
+.qlh-cohead-contact p {
+  display: flex;
+  gap: 2mm;
+  align-items: flex-start;
+  line-height: 1.35;
+}
+
+.qlh-cohead-contact p + p { margin-top: 1.2mm; }
+
+.qlh-cohead-contact svg {
+  flex-shrink: 0;
+  margin-top: 0.4mm;
+  color: #1D4ED8;
+}
+
+.qlh-cohead-contact span { white-space: pre-line; }
+
+.qlh-foot-text {
+  padding: 3mm 12mm 5mm;
+  border-top: 0.75pt solid #CBD5E1;
+  text-align: center;
+  font-size: 8.5pt;
+  color: #4B5563;
+  white-space: pre-line;
+}
+
+/* ── To / reference ───────────────────────────────────────────────────── */
+.qlh-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10mm;
+  font-size: 10pt;
+}
+
+.qlh-to p { line-height: 1.5; }
+.qlh-to .qlh-to-label { margin-bottom: 1mm; }
+.qlh-to .qlh-to-name { font-weight: 700; padding-left: 4mm; }
+.qlh-to p:not(.qlh-to-label) { padding-left: 4mm; }
+
+.qlh-ref { border-collapse: collapse; align-self: flex-start; }
+.qlh-ref th,
+.qlh-ref td { padding: 0.4mm 0; text-align: left; font-weight: 400; white-space: nowrap; }
+.qlh-ref th { padding-right: 2mm; }
+
+.qlh-title {
+  margin: 4mm 0 4mm !important;
+  text-align: center;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 18pt;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-decoration: underline;
+  text-underline-offset: 1.5mm;
+}
+
+/* ── Items ────────────────────────────────────────────────────────────── */
+.qlh-items {
+  width: 100%;
+  border-collapse: collapse;
+  border: var(--qlh-rule);
+  table-layout: fixed;
+}
+
+.qlh-items th,
+.qlh-items td {
+  border-left: var(--qlh-rule);
+  vertical-align: top;
+}
+
+.qlh-items thead th {
+  padding: 2mm 2mm;
+  border-bottom: var(--qlh-rule);
+  font-size: 9.5pt;
+  font-weight: 700;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.qlh-items tbody td { padding: 2.5mm 2mm; }
+.qlh-items tbody tr + tr td { border-top: var(--qlh-rule); }
+/* Totals stay together; a tall item row may continue on the next page */
+.qlh-items .qlh-totals { break-inside: avoid; }
+
+.qlh-c-sn { width: 11mm; text-align: center; }
+.qlh-c-qty { width: 15mm; text-align: center !important; }
+.qlh-c-amt { width: 30mm; }
+.qlh-num { text-align: right; white-space: nowrap; }
+
+.qlh-desc { padding: 3mm 4mm 4mm !important; }
+
+.qlh-item-name {
+  text-align: center;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.8mm;
+}
+
+.qlh-item-model {
+  text-align: center;
+  font-size: 9pt;
+  color: #4B5563;
+  margin-top: 0.5mm !important;
+}
+
+.qlh-item-img {
+  display: block;
+  max-width: 85%;
+  max-height: 72mm;
+  margin: 4mm auto 3mm;
+  object-fit: contain;
+}
+
+.qlh-item-text { margin-top: 2mm !important; }
+
+.qlh-item-head {
+  margin-top: 3mm !important;
+  font-weight: 700;
+  font-size: 9.5pt;
+  text-decoration: underline;
+}
+
+.qlh-features {
+  margin-top: 2mm !important;
+  padding-left: 9mm;
+  list-style: disc;
+  font-size: 9.5pt;
+}
+
+.qlh-features li { line-height: 1.4; }
+
+.qlh-items .qlh-totals th,
+.qlh-items .qlh-totals td {
+  padding: 1.6mm 2mm;
+  border-top: var(--qlh-rule);
+  font-size: 9.5pt;
+}
+
+.qlh-items .qlh-totals th { text-align: right; font-weight: 600; }
+.qlh-items .qlh-totals .qlh-grand th,
+.qlh-items .qlh-totals .qlh-grand td { font-weight: 700; font-size: 10.5pt; }
+.qlh-items .qlh-totals .qlh-words td { text-align: left; font-size: 9.5pt; }
+
+.qlh-note { margin-top: 4mm !important; }
+
+/* ── Terms page ───────────────────────────────────────────────────────── */
+.qlh-terms-title {
+  margin: 7mm 0 6mm !important;
+  text-align: center;
+  font-size: 11pt;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 1mm;
+}
+
+.qlh-terms {
+  padding-left: 7mm;
+  font-size: 10pt;
+}
+
+.qlh-terms li {
+  line-height: 1.45;
+  margin-bottom: 1.2mm;
+  break-inside: avoid;
+}
+
+.qlh-terms li::marker { font-weight: 700; }
+
+.qlh-bank {
+  width: 62%;
+  margin: 1.5mm 0 1mm;
+  border-collapse: collapse;
+}
+
+.qlh-bank th,
+.qlh-bank td {
+  border: var(--qlh-rule);
+  padding: 0.6mm 2mm;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 400;
+}
+
+.qlh-bank th { width: 46%; text-transform: uppercase; }
+
+.qlh-sign {
+  margin: 7mm 0 0 14mm;
+  break-inside: avoid;
+}
+
+.qlh-sign-for,
+.qlh-sign-label { font-weight: 700; }
+
+.qlh-sign-space {
+  height: 22mm;
+  display: flex;
+  align-items: center;
+  padding-left: 18mm;
+}
+
+.qlh-sign-space img {
+  max-height: 21mm;
+  max-width: 50mm;
+  object-fit: contain;
+}
+
+/* ── Print: repeat header/footer on every page ────────────────────────── */
+@media print {
+  .inv-print.qlh-doc {
+    width: 210mm;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    font-size: 10pt;
+  }
+
+  .qlh-screen { display: none !important; }
+
+  .qlh-print-fixed {
+    display: block;
+    position: fixed;
+    left: 0;
+    width: 210mm;
+    background: #fff;
+  }
+
+  .qlh-print-top { top: 0; }
+  .qlh-print-bottom { bottom: 0; }
+
+  .qlh-flow > thead { display: table-header-group; }
+  .qlh-flow > tfoot { display: table-footer-group; }
+  .qlh-ghost { visibility: hidden; }
+
+  .qlh-sheet {
+    display: block;
+    min-height: 0;
+    border-top: none !important;
+    break-after: page;
+  }
+
+  .qlh-sheet.is-last { break-after: auto; }
+}
+
+/* ── Rich-text terms (from the template's terms editor) ───────────────── */
+.qlh-rich {
+  font-size: 10pt;
+  line-height: 1.45;
+}
+
+.qlh-rich > * + * { margin-top: 1.5mm !important; }
+.qlh-rich h2 { font-size: 11pt; font-weight: 700; }
+.qlh-rich h3 { font-size: 10.5pt; font-weight: 700; }
+.qlh-rich ol,
+.qlh-rich ul { padding-left: 7mm; }
+.qlh-rich li { margin-bottom: 1.2mm; break-inside: avoid; }
+.qlh-rich ol > li::marker { font-weight: 700; }
+.qlh-rich hr { border: none; border-top: var(--qlh-rule); margin: 3mm 0; }
+.qlh-rich blockquote { margin: 0; padding-left: 4mm; border-left: 0.75pt solid #9CA3AF; }
+
+.qlh-rich table:not(.qlh-bank) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5mm 0;
+}
+
+.qlh-rich table:not(.qlh-bank) th,
+.qlh-rich table:not(.qlh-bank) td {
+  border: var(--qlh-rule);
+  padding: 0.8mm 2mm;
+  text-align: left;
+  vertical-align: top;
+}
+
+.qlh-rich table p { margin: 0; }
+.qlh-rich-extra { margin-top: 3mm !important; }

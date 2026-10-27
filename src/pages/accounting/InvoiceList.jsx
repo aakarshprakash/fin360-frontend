@@ -28,6 +28,10 @@ const actionBtnStyle = {
   padding: 0, fontFamily: 'inherit',
 };
 
+// Open invoices with something received or credited show as partially paid
+const isPartial = (inv) => ['pending', 'overdue'].includes(inv.status) && inv.amountPaid + inv.amountCredited > 0;
+const statusText = (inv) => (isPartial(inv) ? 'Partially paid' : inv.status.charAt(0).toUpperCase() + inv.status.slice(1));
+
 function InvoiceList() {
   const navigate = useNavigate();
   const { showSnackbar } = useSnackbar();
@@ -103,6 +107,7 @@ function InvoiceList() {
       currency: inv.currency || 'INR',
       total: Number(inv.total) || 0,
       amountPaid: Number(inv.amountPaid || inv.amount_paid) || 0,
+      amountCredited: Number(inv.amountCredited) || 0,
       itemCount: Array.isArray(inv.items) ? inv.items.length : (Number(inv.items) || 0),
     };
   };
@@ -124,6 +129,8 @@ function InvoiceList() {
       customerEmail: inv.customerEmail || customerObj?.email || '',
       customerPhone: inv.customerPhone || customerObj?.phone || '',
       customerState: inv.customerState || customerObj?.state || '',
+      customerPan: inv.customerPan || customerObj?.pan || '',
+      customerContact: inv.customerContact || customerObj?.contactPerson || '',
       date: inv.date || '',
       dueDate: inv.dueDate || inv.due_date || '',
       status: inv.status || 'pending',
@@ -133,6 +140,7 @@ function InvoiceList() {
       tax: Number(inv.tax) || 0,
       discount: Number(inv.discount) || 0,
       amountPaid: Number(inv.amountPaid || inv.amount_paid) || 0,
+      amountCredited: Number(inv.amountCredited) || 0,
       exchangeRate: Number(inv.exchangeRate || inv.exchange_rate) || 1,
       items: Array.isArray(inv.items) ? inv.items.map(item => ({
         ...item,
@@ -157,7 +165,7 @@ function InvoiceList() {
   const totalPending = statsNormalized.filter(i => i.status === 'pending').reduce((s, i) => s + i.total, 0);
   const totalPaid = statsNormalized.filter(i => i.status === 'paid').reduce((s, i) => s + i.total, 0);
   const totalOverdue = statsNormalized.filter(i => i.status === 'overdue').reduce((s, i) => s + i.total, 0);
-  const totalBalance = statsNormalized.reduce((s, i) => s + (i.total - i.amountPaid), 0);
+  const totalBalance = statsNormalized.reduce((s, i) => s + (i.total - i.amountPaid - i.amountCredited), 0);
 
   // Quick print — fetches full invoice, opens print window
   const handleQuickPrint = useCallback(async (e, invId) => {
@@ -325,7 +333,7 @@ ${stylesHTML}
                     {statsNormalized.length === 0 ? 'No invoices yet. Create your first invoice to get started.' : 'No invoices match your filters.'}
                   </td></tr>
                 ) : filtered.map(inv => {
-                  const balance = inv.total - inv.amountPaid;
+                  const balance = inv.total - inv.amountPaid - inv.amountCredited;
                   const isOverdue = inv.status === 'overdue';
                   return (
                     <tr key={inv.id} onClick={() => navigate(`/invoices/${inv.id}`)} style={{cursor:'pointer'}}>
@@ -334,8 +342,8 @@ ${stylesHTML}
                       <td style={{whiteSpace:'nowrap', color:'var(--neutral-500)', fontSize:'12px'}}>{formatDate(inv.date)}</td>
                       <td style={{whiteSpace:'nowrap', color: isOverdue ? '#dc2626' : 'var(--neutral-500)', fontSize:'12px'}}>{formatDate(inv.dueDate)}</td>
                       <td>
-                        <span className={`acc-status-badge ${inv.status}`}>
-                          {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                        <span className={`acc-status-badge ${isPartial(inv) ? 'partial' : inv.status}`}>
+                          {statusText(inv)}
                         </span>
                       </td>
                       <td style={{textAlign:'right', fontWeight:500, fontVariantNumeric:'tabular-nums'}}>
@@ -384,14 +392,14 @@ ${stylesHTML}
                   {statsNormalized.length === 0 ? 'No invoices yet.' : 'No invoices match your filters.'}
                 </div>
               ) : filtered.map(inv => {
-                const balance = inv.total - inv.amountPaid;
+                const balance = inv.total - inv.amountPaid - inv.amountCredited;
                 return (
                   <div key={inv.id} className="acc-mobile-card" onClick={() => navigate(`/invoices/${inv.id}`)}>
                     <div className="acc-mc-top">
                       <div>
                         <span className="acc-mc-number">{inv.invoiceNumber}</span>
-                        <span className={`acc-status-badge ${inv.status}`} style={{marginLeft:'8px'}}>
-                          {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                        <span className={`acc-status-badge ${isPartial(inv) ? 'partial' : inv.status}`} style={{marginLeft:'8px'}}>
+                          {statusText(inv)}
                         </span>
                       </div>
                       <span className="acc-mc-amount">{formatCurrency(inv.total, inv.currency)}</span>

@@ -419,3 +419,363 @@
 }
 
 .inv-pre-inline { white-space: pre-line; }
+
+/* ── Modern design: options added for the classic GST fields ─────────── */
+.inv-co .inv-tagline {
+  white-space: pre-line;
+  font-size: calc(var(--inv-fs) * 0.8333);
+  color: var(--muted);
+  margin-bottom: 1mm;
+}
+
+.inv-party-pair.has-shipto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 5mm;
+}
+
+.inv-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1mm 6mm;
+}
+
+.inv-declaration {
+  font-size: calc(var(--inv-fs) * 0.7778) !important;
+  color: var(--muted) !important;
+}
+
+.inv-received {
+  font-size: calc(var(--inv-fs) * 0.9444);
+  color: var(--ink-2);
+}
+
+/* ============================================================================
+   Boxed design (InvoiceBoxedView): every block ruled, item column rules run
+   to the totals, black ink. The box stretches to fill the A4 sheet.
+   ============================================================================ */
+.bx-doc {
+  --bx-rule: 0.75pt solid #1F2937;
+  padding: 10mm 10mm 5mm 12mm;
+  color: #111827;
+}
+
+.bx-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: var(--bx-rule);
+}
+
+.bx-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border-top: var(--bx-rule);
+}
+
+.bx-split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.bx-sum {
+  grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+}
+
+.bx-split > .bx-cell + .bx-cell,
+.bx-sum > .bx-cell + .bx-cell {
+  border-left: var(--bx-rule);
+}
+
+.bx-cell {
+  padding: 0.9mm 2.5mm;
+  min-width: 0;
+}
+
+.bx-cell-flush {
+  padding: 0;
+}
+
+.bx-row.bx-line {
+  display: block;
+  padding: 0.9mm 2.5mm;
+}
+
+.bx-pre { white-space: pre-line; }
+.bx-pre-inline { white-space: pre-line; }
+
+/* Letterhead: logo beside the text, text centred in the space left */
+.bx-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-items: center;
+  gap: 4mm;
+  padding: 2mm 3mm 1.5mm;
+}
+
+.bx-head.has-logo { grid-template-columns: auto minmax(0, 1fr); }
+.bx-logo-right .bx-head.has-logo { grid-template-columns: minmax(0, 1fr) auto; }
+.bx-logo-center .bx-head.has-logo { grid-template-columns: minmax(0, 1fr); }
+
+.bx-logo {
+  height: var(--logo-h);
+  max-width: calc(var(--logo-h) * 2.2);
+  width: auto;
+  object-fit: contain;
+}
+
+.bx-co {
+  text-align: center;
+  max-width: 150mm;
+}
+
+.bx-co h1 {
+  font-size: calc(var(--inv-fs) * 1.7);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--accent);
+}
+
+.bx-tagline {
+  white-space: pre-line;
+  font-size: calc(var(--inv-fs) * 0.8);
+  color: #4B5563;
+  line-height: 1.3;
+  margin-bottom: 0.5mm;
+}
+
+.bx-co-big {
+  font-size: calc(var(--inv-fs) * 1.12);
+  line-height: 1.22;
+}
+
+.bx-logo-center .bx-logo { display: block; margin: 0 auto 2mm; }
+
+.bx-title {
+  border-top: var(--bx-rule);
+  padding: 0.4mm 2mm;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.bx-title h2 {
+  display: inline;
+  font-size: calc(var(--inv-fs) * 1.3);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.bx-title span {
+  margin-left: 3mm;
+  font-size: calc(var(--inv-fs) * 0.85);
+  color: #4B5563;
+}
+
+/* label : value lists */
+.bx-kv {
+  width: auto !important;
+}
+
+.bx-kv th,
+.bx-kv td {
+  padding: 0;
+  line-height: 1.38;
+  text-align: left;
+  vertical-align: top;
+  font-size: var(--inv-fs);
+}
+
+.bx-kv th {
+  font-weight: 400;
+  white-space: nowrap;
+  padding-right: 4mm;
+}
+
+.bx-kv .bx-colon {
+  padding-right: 2mm;
+}
+
+.bx-kv-bank th,
+.bx-kv-bank td,
+.bx-kv-fields th,
+.bx-kv-fields td {
+  font-size: calc(var(--inv-fs) * 0.9);
+}
+
+.bx-kv-bank td:last-child {
+  font-weight: 700;
+}
+
+.bx-h {
+  font-weight: 700;
+  font-size: var(--inv-fs);
+  margin-bottom: 0.3mm;
+}
+
+/* Parties */
+.bx-cellhead {
+  padding: 0.6mm 2.5mm;
+  font-weight: 700;
+  border-bottom: var(--bx-rule);
+}
+
+.bx-party {
+  padding: 0.9mm 2.5mm 1.1mm 6mm;
+}
+
+.bx-party p {
+  font-size: calc(var(--inv-fs) * 0.95);
+  line-height: 1.3;
+}
+
+.bx-party .bx-party-name {
+  font-size: calc(var(--inv-fs) * 1.05);
+  font-weight: 700;
+}
+
+/* Items */
+.bx-items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-top: var(--bx-rule);
+}
+
+.bx-items table {
+  flex: 1;
+  table-layout: fixed;
+}
+
+.bx-items th {
+  padding: 0.9mm 1.5mm;
+  font-weight: 700;
+  font-size: calc(var(--inv-fs) * 0.98);
+  line-height: 1.25;
+  text-align: center;
+  vertical-align: middle;
+  border-bottom: var(--bx-rule);
+}
+
+.bx-items td {
+  padding: 1.4mm 1.5mm 0.6mm;
+  vertical-align: top;
+  font-size: var(--inv-fs);
+}
+
+.bx-items th + th,
+.bx-items td + td {
+  border-left: var(--bx-rule);
+}
+
+.bx-items tr.bx-fill td {
+  height: 100%;
+  padding: 0;
+}
+
+.bx-c-idx { width: 10mm; text-align: center; }
+.bx-c-hsn { width: 20mm; text-align: center; }
+.bx-c-qty { width: 15mm; }
+.bx-c-uom { width: 14mm; text-align: center; }
+.bx-c-amt { width: 22mm; }
+.bx-num { text-align: right; white-space: nowrap; }
+
+/* Totals */
+.bx-totals th,
+.bx-totals td {
+  padding: 0;
+  line-height: 1.38;
+  font-size: var(--inv-fs);
+  text-align: left;
+  font-weight: 400;
+}
+
+.bx-totals td {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.bx-totals td + td {
+  padding-left: 3mm;
+}
+
+.bx-totals .bx-strong th,
+.bx-totals .bx-strong td {
+  font-weight: 700;
+}
+
+.bx-words {
+  font-size: calc(var(--inv-fs) * 0.98);
+  line-height: 1.3;
+}
+
+.bx-net .bx-strong th,
+.bx-net .bx-strong td {
+  font-size: calc(var(--inv-fs) * 1.08);
+}
+
+.bx-declaration {
+  font-size: calc(var(--inv-fs) * 0.78);
+  line-height: 1.22;
+}
+
+.bx-thanks {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Receiver's note & signatory */
+.bx-signrow .bx-cell {
+  min-height: 24mm;
+}
+
+.bx-received {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.bx-sign {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.bx-sign-for {
+  font-size: var(--inv-fs);
+}
+
+.bx-sign-space {
+  flex: 1;
+  min-height: 12mm;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bx-sign-space img {
+  max-height: 18mm;
+  max-width: 55mm;
+  object-fit: contain;
+}
+
+.bx-sign-label {
+  font-size: var(--inv-fs);
+}
+
+.bx-below {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 1.2mm;
+  font-size: calc(var(--inv-fs) * 0.9);
+  color: #374151;
+}
+.bx-logo-right .bx-head > .bx-logo { order: 2; }
+
+/* Long invoices: never split an item row or a summary block across pages */
+.bx-items tbody tr,
+.bx-row {
+  break-inside: avoid;
+}

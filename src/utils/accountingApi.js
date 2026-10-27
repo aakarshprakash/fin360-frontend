@@ -48,6 +48,10 @@ export const deleteInvoice = (id) => api.delete(`/accounting/invoices/${id}`);
 export const updateInvoiceStatus = (id, status) => api.patch(`/accounting/invoices/${id}/status`, { status });
 export const recordInvoicePayment = (id, data) => api.post(`/accounting/invoices/${id}/payments`, data);
 export const getInvoicePayments = (id) => api.get(`/accounting/invoices/${id}/payments`);
+// Void a payment entered by mistake (reverses its ledger entry)
+export const voidInvoicePayment = (id, paymentId) => api.delete(`/accounting/invoices/${id}/payments/${paymentId}`);
+export const createInvoiceCreditNote = (id, data) => api.post(`/accounting/invoices/${id}/credit-notes`, data);
+export const voidCreditNote = (id, creditNoteId) => api.delete(`/accounting/invoices/${id}/credit-notes/${creditNoteId}`);
 export const sendInvoiceEmail = (id) => api.post(`/accounting/invoices/${id}/send`);
 export const downloadInvoicePdf = (id) => api.get(`/accounting/invoices/${id}/pdf`, { responseType: 'blob' });
 export const createCreditNote = (data) => api.post('/accounting/credit-notes', data);
@@ -223,3 +227,23 @@ export const createBranch = (data) => api.post('/accounting/branches', data);
 export const updateBranch = (id, data) => api.put(`/accounting/branches/${id}`, data);
 export const deleteBranch = (id) => api.delete(`/accounting/branches/${id}`);
 export const getBranchReport = (id, type, params) => api.get(`/accounting/branches/${id}/reports/${type}`, { params });
+
+// ============ Product images & stock ============
+const multipart = { headers: { 'Content-Type': undefined } };
+export const uploadProductImage = (id, file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  return api.post(`/accounting/products/${id}/image`, formData, multipart);
+};
+export const deleteProductImage = (id) => api.delete(`/accounting/products/${id}/image`);
+export const getStockMovements = (id) => api.get(`/accounting/products/${id}/stock-movements`);
+// type: 'in' | 'out' | 'set'
+export const adjustStock = (id, data) => api.post(`/accounting/products/${id}/stock`, data);
+
+// ============ Quotation letterhead artwork (slot: 'header' | 'footer') ============
+export const uploadQuotationImage = (slot, file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  return api.post(`/accounting/settings/quotation-image/${slot}`, formData, multipart);
+};
+export const deleteQuotationImage = (slot) => api.delete(`/accounting/settings/quotation-image/${slot}`);

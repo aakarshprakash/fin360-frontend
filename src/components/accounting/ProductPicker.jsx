@@ -57,9 +57,8 @@ function ProductPicker({ value, onChange, onSelectProduct, placeholder }) {
   const q = (value || '').toLowerCase();
   const filtered = q
     ? products.filter(p =>
-        (p.name || '').toLowerCase().includes(q) ||
-        (p.hsnCode || p.hsn_code || '').toLowerCase().includes(q) ||
-        (p.category || '').toLowerCase().includes(q))
+        `${p.name || ''} ${p.sku || ''} ${p.brand || ''} ${p.model || ''} ${p.hsnCode || p.hsn_code || ''} ${p.category || ''}`
+          .toLowerCase().includes(q))
     : products;
 
   const formatPrice = (p) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(p.unitPrice || p.unit_price || 0));
@@ -94,7 +93,12 @@ function ProductPicker({ value, onChange, onSelectProduct, placeholder }) {
                 <span style={{ color: 'var(--primary-600)', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatPrice(p)}</span>
               </div>
               <div style={{ fontSize: '11px', color: 'var(--neutral-500)' }}>
-                {p.category || ''}{(p.hsnCode || p.hsn_code) ? ` · HSN: ${p.hsnCode || p.hsn_code}` : ''}
+                {[p.sku, p.category, (p.hsnCode || p.hsn_code) && `HSN: ${p.hsnCode || p.hsn_code}`].filter(Boolean).join(' · ')}
+                {p.trackStock && (
+                  <span style={{ marginLeft: '6px', fontWeight: 600, color: Number(p.stockQuantity) > 0 ? 'var(--success-700)' : 'var(--error-600)' }}>
+                    · {Number(p.stockQuantity || 0).toLocaleString('en-IN')} {p.unit || 'NOS'} in stock
+                  </span>
+                )}
               </div>
             </div>
           ))}

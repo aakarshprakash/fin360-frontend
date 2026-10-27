@@ -279,7 +279,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1300; /* above the app shell (sidebar 1100, popovers 1200) */
   padding: 20px;
 }
 .acc-modal {
@@ -1371,7 +1371,7 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  z-index: 1300;
   display: flex;
   align-items: flex-start;
   justify-content: center;

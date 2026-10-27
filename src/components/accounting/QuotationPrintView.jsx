@@ -3,6 +3,8 @@
 // CIN/GSTIN/PAN + signature footer). Nothing here is hardcoded — every company
 // and terms detail is pulled from Accounting Settings > Company / Quotation Template.
 import { API_ORIGIN } from '../../utils/api';
+import QuotationLetterheadView from './QuotationLetterheadView';
+import { resolveQuotationSettings } from './quotationTemplates';
 
 const defaultCompany = {
   companyName: '', address: '', phone: '', mobile: '', email: '', website: '',
@@ -32,6 +34,9 @@ function numberToWords(num) {
 }
 
 function QuotationPrintView({ quotation, company, quotationSettings }) {
+  if (quotationSettings?.design === 'letterhead') {
+    return <QuotationLetterheadView quotation={quotation} company={company} settings={resolveQuotationSettings(quotationSettings)} />;
+  }
   const co = { ...defaultCompany, ...(company || {}) };
   const qs = { ...defaultQuotationSettings, ...(quotationSettings || {}) };
   const curr = quotation?.currency || 'INR';

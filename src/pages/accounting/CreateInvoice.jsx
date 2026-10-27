@@ -2,8 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
-import { createInvoice, updateInvoice, getInvoice, getAccountingCustomers } from '../../utils/accountingApi';
+import { createInvoice, updateInvoice, getInvoice, getAccountingCustomers, getInvoiceTemplateSettings } from '../../utils/accountingApi';
 import ProductPicker from '../../components/accounting/ProductPicker';
+import { resolveInvoiceLayout } from '../../components/accounting/invoiceTemplates';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
 
@@ -37,10 +38,24 @@ function CreateInvoice() {
   const [form, setForm] = useState({
     customer: '', customerId: null, currency: 'INR', exchangeRate: 1,
     date: new Date().toISOString().split('T')[0], dueDate: '', notes: '', useSignature: true,
+    shipTo: '', extraFields: {},
   });
   const [items, setItems] = useState([
-    { description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxId: 4, discount: 0 },
+    { description: '', hsnCode: '', quantity: 1, unit: '', unitPrice: 0, taxId: 4, discount: 0 },
   ]);
+  // The print template decides which extra inputs this form offers
+  const [printLayout, setPrintLayout] = useState(() => resolveInvoiceLayout('default'));
+
+  useEffect(() => {
+    let cancelled = false;
+    getInvoiceTemplateSettings()
+      .then((res) => {
+        const t = res.data?.data || res.data || {};
+        if (!cancelled) setPrintLayout(resolveInvoiceLayout(t.invoiceTheme, t.layout));
+      })
+      .catch(() => { /* keep the default template */ });
+    return () => { cancelled = true; };
+  }, []);
 
   // Fetch customers list
   useEffect(() => {
@@ -83,6 +98,8 @@ function CreateInvoice() {
             dueDate: (inv.dueDate || inv.due_date) ? (inv.dueDate || inv.due_date).split('T')[0] : '',
             notes: inv.notes || '',
             useSignature: (inv.useSignature ?? inv.use_signature) !== false,
+            shipTo: inv.shipTo || '',
+            extraFields: inv.extraFields && typeof inv.extraFields === 'object' ? inv.extraFields : {},
           });
           setCustomerSearch(customerName);
 
@@ -90,7 +107,9 @@ function CreateInvoice() {
             setItems(inv.items.map(item => ({
               description: item.description || '',
               hsnCode: item.hsnCode || item.hsn_code || '',
+              productId: item.productId || null,
               quantity: Number(item.quantity) || 1,
+              unit: item.unit || '',
               unitPrice: Number(item.unitPrice || item.unit_price || item.price) || 0,
               taxId: findTaxId(Number(item.taxRate || item.tax_rate) || 0),
               discount: Number(item.discountPercent || item.discount_percent || 0),
@@ -133,7 +152,7 @@ function CreateInvoice() {
     setShowCustomerDropdown(true);
   };
 
-  const addItem = () => setItems([...items, { description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxId: 4, discount: 0 }]);
+  const addItem = () => setItems([...items, { description: '', hsnCode: '', quantity: 1, unit: '', unitPrice: 0, taxId: 4, discount: 0 }]);
   const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
   const updateItem = (idx, field, value) => {
     const updated = [...items];
@@ -147,7 +166,9 @@ function CreateInvoice() {
     updated[idx] = {
       ...updated[idx],
       description: product.name,
+      productId: product.id,
       hsnCode: product.hsnCode || product.hsn_code || '',
+      unit: product.unit || updated[idx].unit || '',
       unitPrice: Number(product.unitPrice || product.unit_price) || 0,
       taxId: findTaxId(Number(product.taxRate || product.tax_rate) || 0),
     };
@@ -179,7 +200,9 @@ function CreateInvoice() {
         return {
           description: item.description,
           hsnCode: item.hsnCode || null,
+          productId: item.productId || null,
           quantity: item.quantity,
+          unit: item.unit || null,
           unitPrice: item.unitPrice,
           discount: calc.discountAmount,
           taxRate: tax?.rate || 0,
@@ -197,6 +220,8 @@ function CreateInvoice() {
         exchangeRate: form.exchangeRate,
         notes: form.notes,
         useSignature: form.useSignature,
+        shipTo: form.shipTo,
+        extraFields: form.extraFields,
         items: preparedItems,
         subtotal,
         tax: totalTax,
@@ -291,6 +316,25 @@ function CreateInvoice() {
                 <input type="date" value={form.dueDate} onChange={(e) => setForm({...form, dueDate: e.target.value})} />
               </div>
             </div>
+            {printLayout.fields.length > 0 && (
+              <div className="acc-form-row" style={{flexWrap:'wrap'}}>
+                {printLayout.fields.map((f) => (
+                  <div className="acc-form-group" key={f.id} style={{minWidth:'200px'}}>
+                    <label htmlFor={`xf-${f.id}`}>{f.label}</label>
+                    <input id={`xf-${f.id}`} type="text" maxLength={200} value={form.extraFields[f.id] || ''}
+                      onChange={(e) => setForm({ ...form, extraFields: { ...form.extraFields, [f.id]: e.target.value } })} />
+                  </div>
+                ))}
+              </div>
+            )}
+            {printLayout.details.shipTo && (
+              <div className="acc-form-group">
+                <label htmlFor="ship-to">{printLayout.labels.shipTo || 'Ship To'}</label>
+                <textarea id="ship-to" rows={3} maxLength={1000} value={form.shipTo}
+                  onChange={(e) => setForm({ ...form, shipTo: e.target.value })}
+                  placeholder={'Leave empty if same as Bill To.\nFirst line: name, then address, phone, GSTIN…'} />
+              </div>
+            )}
             {form.currency !== 'INR' && (
               <div className="acc-form-group" style={{maxWidth:'300px'}}>
                 <label>Exchange Rate (1 {form.currency} = ? INR)</label>
@@ -311,6 +355,7 @@ function CreateInvoice() {
                 <tr>
                   <th style={{width:'35%'}}>Description</th>
                   <th style={{width:'10%'}}>Qty</th>
+                  {printLayout.columns.uom && <th style={{width:'8%'}}>Unit</th>}
                   <th style={{width:'15%'}}>Price</th>
                   <th style={{width:'15%'}}>Tax</th>
                   <th style={{width:'10%'}}>Discount %</th>
@@ -330,7 +375,7 @@ function CreateInvoice() {
                           <>
                             <ProductPicker
                               value={item.description}
-                              onChange={(val) => updateItem(idx, 'description', val)}
+                              onChange={(val) => setItems(items.map((it, i) => (i === idx ? { ...it, description: val, productId: null } : it)))}
                               onSelectProduct={(p) => selectProductForItem(idx, p)}
                               placeholder="Search products or type a description"
                             />
@@ -339,6 +384,10 @@ function CreateInvoice() {
                         )}
                       </td>
                       <td><input type="number" disabled={invoiceLocked} min="1" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', Number(e.target.value))} /></td>
+                      {printLayout.columns.uom && (
+                        <td><input type="text" disabled={invoiceLocked} maxLength={20} value={item.unit} placeholder="NOS" aria-label="Unit"
+                          onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} /></td>
+                      )}
                       <td><input type="number" disabled={invoiceLocked} min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', Number(e.target.value))} /></td>
                       <td>
                         <select disabled={invoiceLocked} value={item.taxId} onChange={(e) => updateItem(idx, 'taxId', e.target.value)}>

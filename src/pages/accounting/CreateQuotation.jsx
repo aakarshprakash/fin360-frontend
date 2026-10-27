@@ -87,6 +87,7 @@ function CreateQuotation() {
             setItems(q.items.map(item => ({
               description: item.description || '',
               hsnCode: item.hsnCode || item.hsn_code || '',
+              productId: item.productId || null,
               quantity: Number(item.quantity) || 1,
               unitPrice: Number(item.unitPrice || item.unit_price || item.price) || 0,
               taxId: findTaxId(Number(item.taxRate || item.tax_rate) || 0),
@@ -149,6 +150,7 @@ function CreateQuotation() {
     updated[idx] = {
       ...updated[idx],
       description: product.name,
+      productId: product.id,
       hsnCode: product.hsnCode || product.hsn_code || '',
       unitPrice: Number(product.unitPrice || product.unit_price) || 0,
       taxId: findTaxId(Number(product.taxRate || product.tax_rate) || 0),
@@ -180,6 +182,7 @@ function CreateQuotation() {
         return {
           description: item.description,
           hsnCode: item.hsnCode || null,
+          productId: item.productId || null,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           discount: calc.discountAmount,
@@ -336,7 +339,7 @@ function CreateQuotation() {
                       <td>
                         <ProductPicker
                           value={item.description}
-                          onChange={(val) => updateItem(idx, 'description', val)}
+                          onChange={(val) => setItems(items.map((it, i) => (i === idx ? { ...it, description: val, productId: null } : it)))}
                           onSelectProduct={(p) => selectProductForItem(idx, p)}
                           placeholder="Search products or type a description"
                         />

@@ -55,7 +55,7 @@
 
 .itb-preset-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -314,4 +314,201 @@
     position: static;
     order: -1;
   }
+}
+
+/* Custom fields */
+.itb-hint {
+  font-size: 12px;
+  color: var(--neutral-500);
+  line-height: 1.45;
+}
+
+.itb-fields {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.itb-fieldrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px 28px;
+  gap: 6px;
+  width: 100%;
+}
+
+.itb-fieldrow input,
+.itb-fieldrow select {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--neutral-200);
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--neutral-800);
+  background: #fff;
+}
+
+.itb-fieldrow input:focus,
+.itb-fieldrow select:focus {
+  outline: none;
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px var(--primary-50);
+}
+
+.itb-remove {
+  border: none;
+  border-radius: 8px;
+  background: var(--neutral-100);
+  color: var(--neutral-500);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.itb-remove:hover {
+  background: var(--error-50);
+  color: var(--error-600);
+}
+
+/* ── Quotation template builder (qtb-*) ────────────────────────────────── */
+.qtb-designs { grid-template-columns: 1fr 1fr !important; }
+
+.qtb-design-desc {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--neutral-500);
+}
+
+.qtb-upload {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px;
+  border: 1.5px dashed var(--neutral-300);
+  border-radius: 10px;
+  background: var(--neutral-50);
+  color: var(--neutral-600);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.qtb-upload small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--neutral-400);
+}
+
+.qtb-upload:hover:not(:disabled) { border-color: var(--primary-400); color: var(--primary-700); }
+
+.qtb-art {
+  border: 1px solid var(--neutral-200);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.qtb-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.qtb-art-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: 7px 10px;
+  border-top: 1px solid var(--neutral-100);
+}
+
+.qtb-art-actions .itb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.qtb-danger { color: var(--error-600) !important; }
+
+.qtb-error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--error-600);
+}
+
+.qtb-terms {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.qtb-term {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--neutral-200);
+  border-radius: 10px;
+  background: var(--neutral-50);
+}
+
+.qtb-term-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 28px 28px 28px;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.qtb-term-no {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--neutral-500);
+}
+
+.qtb-term input[type='text'],
+.qtb-term textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--neutral-200);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  color: var(--neutral-800);
+}
+
+.qtb-term input[type='text'] { font-weight: 600; }
+.qtb-term textarea { resize: vertical; }
+
+.qtb-term input[type='text']:focus,
+.qtb-term textarea:focus {
+  outline: none;
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px var(--primary-50);
+}
+
+.qtb-term .itb-remove { height: 28px; display: inline-flex; align-items: center; justify-content: center; }
+.qtb-term .itb-remove:disabled { opacity: 0.35; cursor: default; }
+
+.qtb-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--neutral-600);
+  cursor: pointer;
+}
+
+.qtb-check input { accent-color: var(--primary-600); }
+
+/* Room for the terms editor */
+.itb.qtb-wide { grid-template-columns: 440px minmax(0, 1fr); }
+
+@media (max-width: 1180px) {
+  .itb.qtb-wide { grid-template-columns: minmax(0, 1fr); }
 }

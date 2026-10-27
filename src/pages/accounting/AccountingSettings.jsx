@@ -8,6 +8,8 @@ import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
 import useSnackbar from '../../utils/useSnackbar';
 import InvoiceTemplateBuilder from '../../components/accounting/InvoiceTemplateBuilder';
+import QuotationTemplateBuilder from '../../components/accounting/QuotationTemplateBuilder';
+import { DEFAULT_QUOTATION_SETTINGS } from '../../components/accounting/quotationTemplates';
 
 const defaultCompany = {
   companyName: '', address: '',
@@ -16,10 +18,7 @@ const defaultCompany = {
   gstNumber: '', pan: '', cin: '', bankDetails: '', financialYearStart: '04',
   baseCurrency: 'INR', sealSignatureImage: '', companyLogo: '',
 };
-const defaultQuotationSettings = {
-  validity: '30 Days', gstNote: '', deliveryTime: '', deliveryMode: '',
-  warranty: '', paymentTerms: '', computerConfiguration: '', training: '',
-};
+const defaultQuotationSettings = DEFAULT_QUOTATION_SETTINGS;
 const defaultAccounting = {
   fiscalYear: 'april-march', accountingMethod: 'accrual', decimalPrecision: '2',
   defaultReceivable: 'Accounts Receivable', defaultPayable: 'Accounts Payable',
@@ -107,14 +106,22 @@ function AccountingSettings() {
     setSaving(true);
     try {
       if (activeTab === 'invoice') {
-        await updateInvoiceTemplateSettings(template);
+        // Custom fields left without a name are dropped rather than rejected
+        const fields = template.layout?.fields;
+        const toSave = Array.isArray(fields)
+          ? { ...template, layout: { ...template.layout, fields: fields.filter((f) => f.label.trim()).map((f) => ({ ...f, label: f.label.trim() })) } }
+          : template;
+        await updateInvoiceTemplateSettings(toSave);
+        if (toSave !== template) setTemplate(toSave);
       } else {
         await updateAccountingSettings({ company, accounting, numbering, quotation: quotationSettings });
       }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      showSnackbar(err.response?.data?.message || 'Could not save settings. Please try again.', 'error');
+      const body = err.response?.data;
+      const firstError = body?.errors && Object.values(body.errors)[0]?.[0];
+      showSnackbar(firstError || body?.message || 'Could not save settings. Please try again.', 'error');
     }
     setSaving(false);
   };
@@ -456,31 +463,7 @@ function AccountingSettings() {
 
         {/* Quotation Template Settings */}
         {activeTab === 'quotation' && (
-          <div className="acc-table-container" style={{padding:'24px'}}>
-            <h3 style={{margin:'0 0 6px',fontSize:'16px',fontWeight:600}}>Quotation Terms & Conditions</h3>
-            <p style={{margin:'0 0 20px',fontSize:'13px',color:'var(--neutral-500)'}}>
-              These appear on every printed/PDF quotation's Terms &amp; Conditions block. Leave a field blank to omit its row.
-            </p>
-            <div className="acc-form-row">
-              <div className="acc-form-group"><label>Validity</label><input type="text" value={quotationSettings.validity || ''} onChange={(e) => setQuotationSettings({...quotationSettings, validity: e.target.value})} placeholder="e.g., 30 Days" /></div>
-              <div className="acc-form-group"><label>GST Note</label><input type="text" value={quotationSettings.gstNote || ''} onChange={(e) => setQuotationSettings({...quotationSettings, gstNote: e.target.value})} placeholder="e.g., IGST @ 5% Included" /></div>
-            </div>
-            <div className="acc-form-row">
-              <div className="acc-form-group"><label>Delivery Time</label><input type="text" value={quotationSettings.deliveryTime || ''} onChange={(e) => setQuotationSettings({...quotationSettings, deliveryTime: e.target.value})} placeholder="e.g., 2 to 3 Weeks" /></div>
-              <div className="acc-form-group"><label>Delivery Mode</label><input type="text" value={quotationSettings.deliveryMode || ''} onChange={(e) => setQuotationSettings({...quotationSettings, deliveryMode: e.target.value})} placeholder="e.g., By Courier" /></div>
-            </div>
-            <div className="acc-form-row">
-              <div className="acc-form-group"><label>Warranty</label><input type="text" value={quotationSettings.warranty || ''} onChange={(e) => setQuotationSettings({...quotationSettings, warranty: e.target.value})} placeholder="e.g., 3 months from the date of supply" /></div>
-              <div className="acc-form-group"><label>Payment</label><input type="text" value={quotationSettings.paymentTerms || ''} onChange={(e) => setQuotationSettings({...quotationSettings, paymentTerms: e.target.value})} placeholder="e.g., 50% advance and balance against delivery" /></div>
-            </div>
-            <div className="acc-form-row">
-              <div className="acc-form-group"><label>Computer Configuration</label><input type="text" value={quotationSettings.computerConfiguration || ''} onChange={(e) => setQuotationSettings({...quotationSettings, computerConfiguration: e.target.value})} placeholder="e.g., Not Applicable" /></div>
-              <div className="acc-form-group"><label>Training</label><input type="text" value={quotationSettings.training || ''} onChange={(e) => setQuotationSettings({...quotationSettings, training: e.target.value})} placeholder="e.g., Adequate training will be provided at the time of installation" /></div>
-            </div>
-            <p style={{margin:'8px 0 0',fontSize:'12px',color:'var(--neutral-400)'}}>
-              Bank Details shown alongside these terms come from the Company tab.
-            </p>
-          </div>
+          <QuotationTemplateBuilder settings={quotationSettings} onChange={setQuotationSettings} company={company} />
         )}
 
         {/* Payment Methods */}

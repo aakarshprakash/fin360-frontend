@@ -3,7 +3,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { createRoot } from 'react-dom/client';
 import Layout from '../../components/Layout';
-import { getInvoice, updateInvoice, updateInvoiceStatus, recordInvoicePayment, deleteInvoice } from '../../utils/accountingApi';
+import { getInvoice, updateInvoice, deleteInvoice, voidInvoicePayment, voidCreditNote } from '../../utils/accountingApi';
+import { FileMinus, Wallet } from 'lucide-react';
+import InvoicePaymentModal from '../../components/accounting/InvoicePaymentModal';
+import CreditNoteModal from '../../components/accounting/CreditNoteModal';
+import '../../styles/InvoiceSettlement.css';
 import { loadInvoicePrintData, PRINT_PAGE_CSS } from '../../utils/invoicePrintData';
 import useSnackbar from '../../utils/useSnackbar';
 import '../../styles/Accounting.css';
@@ -551,8 +555,7 @@ function InvoiceDetail() {
   const { showSnackbar } = useSnackbar();
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [paymentData, setPaymentData] = useState({ amount: 0, date: new Date().toISOString().split('T')[0], method: 'Bank Transfer', reference: '' });
+  const [dialog, setDialog] = useState(null); // 'payment' | 'credit'
   const [actionLoading, setActionLoading] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [companyInfo, setCompanyInfo] = useState(null);
@@ -576,6 +579,8 @@ function InvoiceDetail() {
       customerEmail: inv.customerEmail || customerObj?.email || '',
       customerPhone: inv.customerPhone || customerObj?.phone || '',
       customerState: inv.customerState || customerObj?.state || '',
+      customerPan: inv.customerPan || customerObj?.pan || '',
+      customerContact: inv.customerContact || customerObj?.contactPerson || '',
       date: inv.date || '',
       dueDate: inv.dueDate || inv.due_date || '',
       status: inv.status || 'pending',
@@ -585,6 +590,7 @@ function InvoiceDetail() {
       tax: Number(inv.tax) || 0,
       discount: Number(inv.discount) || 0,
       amountPaid: Number(inv.amountPaid || inv.amount_paid) || 0,
+      amountCredited: Number(inv.amountCredited) || 0,
       exchangeRate: Number(inv.exchangeRate) || 1,
       items: Array.isArray(inv.items) ? inv.items.map(item => ({
         ...item,
@@ -600,6 +606,10 @@ function InvoiceDetail() {
         ...p,
         amount: Number(p.amount) || 0,
       })) : inv.payments || [],
+      creditNotes: Array.isArray(inv.creditNotes) ? inv.creditNotes.map(c => ({
+        ...c,
+        total: Number(c.total) || 0,
+      })) : [],
     };
   };
 
@@ -704,43 +714,27 @@ ${stylesHTML}
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: invoice?.currency || 'INR', maximumFractionDigits: 0 }).format(Number(amount) || 0);
 
-  const handleStatusChange = async (newStatus) => {
-    setActionLoading(true);
-    try {
-      await updateInvoiceStatus(id, newStatus);
-      setInvoice({ ...invoice, status: newStatus });
-      showSnackbar(`Invoice marked as ${newStatus}.`, 'success');
-    } catch (err) {
-      // Do NOT change the local status — the backend rejected it (e.g. can't
-      // mark paid without a full payment on record). Showing "Paid" here
-      // when the server disagrees would mislead the bookkeeper.
-      showSnackbar(err.response?.data?.message || `Could not update status. Please try again.`, 'error');
-    }
-    setActionLoading(false);
+  // A payment or credit note was saved: the server sends back the updated invoice
+  const handleSettled = (raw, message) => {
+    if (raw?.id) setInvoice(normalizeInvoice(raw));
+    setDialog(null);
+    showSnackbar(message, 'success');
   };
 
-  const handleRecordPayment = async (e) => {
-    e.preventDefault();
+  const handleVoid = async (entry) => {
+    const what = entry.kind === 'payment'
+      ? `the ${formatCurrency(entry.amount)} payment of ${new Date(entry.date).toLocaleDateString('en-IN')}`
+      : `credit note ${entry.number}`;
+    if (!window.confirm(`Void ${what}? Its accounting entry is reversed and the invoice balance goes back up.`)) return;
     setActionLoading(true);
-    const payment = { ...paymentData, amount: Number(paymentData.amount) };
     try {
-      const response = await recordInvoicePayment(id, payment);
-      const raw = response.data?.data || response.data;
-      if (raw?.id) {
-        setInvoice(normalizeInvoice(raw));
-      } else {
-        const newPaid = (invoice.amountPaid || 0) + payment.amount;
-        const newPayments = [...(invoice.payments || []), payment];
-        const newStatus = newPaid >= invoice.total ? 'paid' : 'partial';
-        setInvoice({ ...invoice, amountPaid: newPaid, payments: newPayments, status: newStatus });
-      }
-      showSnackbar('Payment recorded successfully.', 'success');
-      setShowPaymentForm(false);
-      setPaymentData({ amount: 0, date: new Date().toISOString().split('T')[0], method: 'Bank Transfer', reference: '' });
+      const res = entry.kind === 'payment'
+        ? await voidInvoicePayment(id, entry.id)
+        : await voidCreditNote(id, entry.id);
+      if (res.data?.invoice?.id) setInvoice(normalizeInvoice(res.data.invoice));
+      showSnackbar(entry.kind === 'payment' ? 'Payment voided.' : 'Credit note voided.', 'success');
     } catch (err) {
-      // Leave the invoice/payment history untouched — the payment was not
-      // actually saved, so the form stays open for the user to retry.
-      showSnackbar(err.response?.data?.message || 'Could not record payment. Please try again.', 'error');
+      showSnackbar(err.response?.data?.message || 'Could not void it. Please try again.', 'error');
     }
     setActionLoading(false);
   };
@@ -771,7 +765,18 @@ ${stylesHTML}
     </Layout>
   );
 
-  const balanceDue = invoice.total - (invoice.amountPaid || 0);
+  const balanceDue = Math.max(0, Math.round((invoice.total - invoice.amountPaid - invoice.amountCredited) * 100) / 100);
+  const canSettle = balanceDue > 0.005 && !['cancelled', 'draft'].includes(invoice.status);
+  const fmtDay = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
+  const statusLabel = invoice.status === 'paid' ? 'Paid'
+    : invoice.amountPaid + invoice.amountCredited > 0 && ['pending', 'overdue'].includes(invoice.status)
+      ? `Partially paid${invoice.status === 'overdue' ? ' · overdue' : ''}`
+      : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1);
+  const pct = (v) => (invoice.total > 0 ? Math.min(100, (v / invoice.total) * 100) : 0);
+  const history = [
+    ...invoice.payments.map((p) => ({ kind: 'payment', id: p.id, date: p.date, amount: p.amount, label: p.method || 'Payment', ref: p.reference, note: p.notes })),
+    ...invoice.creditNotes.map((c) => ({ kind: 'credit', id: c.id, date: c.date || c.createdAt, amount: c.total, number: c.creditNoteNumber, label: c.creditNoteNumber, ref: c.reason, note: null })),
+  ].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   return (
     <Layout>
@@ -792,14 +797,14 @@ ${stylesHTML}
             <button className="acc-btn acc-btn-secondary" onClick={handleSavePDF}>
               {ICONS.download} Save PDF
             </button>
-            {invoice.status !== 'paid' && (
-              <button className="acc-btn acc-btn-primary" onClick={() => { setPaymentData({...paymentData, amount: balanceDue}); setShowPaymentForm(true); }} disabled={actionLoading}>
-                {ICONS.creditCard} Record Payment
+            {canSettle && (
+              <button className="acc-btn acc-btn-secondary" onClick={() => setDialog('credit')} disabled={actionLoading}>
+                <FileMinus size={15} aria-hidden="true" /> Credit note
               </button>
             )}
-            {invoice.status === 'pending' && (
-              <button className="acc-btn acc-btn-success" onClick={() => handleStatusChange('paid')} disabled={actionLoading}>
-                {ICONS.checkCircle} Mark Paid
+            {canSettle && (
+              <button className="acc-btn acc-btn-primary" onClick={() => setDialog('payment')} disabled={actionLoading}>
+                <Wallet size={15} aria-hidden="true" /> Record payment
               </button>
             )}
             <button className="acc-btn acc-btn-danger" onClick={handleDelete} disabled={actionLoading} style={{padding:'8px 14px',fontSize:'13px'}}>
@@ -808,57 +813,49 @@ ${stylesHTML}
           </div>
         </div>
 
-        <div className="acc-kpi-grid">
-          <div className="acc-kpi-card"><p className="kpi-label">Invoice Date</p><p className="kpi-value" style={{fontSize:'18px'}}>{invoice.date ? new Date(invoice.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</p></div>
-          <div className="acc-kpi-card"><p className="kpi-label">Due Date</p><p className="kpi-value" style={{fontSize:'18px'}}>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</p></div>
-          <div className="acc-kpi-card"><p className="kpi-label">Total Amount</p><p className="kpi-value" style={{color:'var(--primary-600)'}}>{formatCurrency(invoice.total)}</p></div>
-          <div className="acc-kpi-card">
-            <p className="kpi-label">Balance Due</p>
-            <p className="kpi-value" style={{color: balanceDue > 0 ? 'var(--error-600)' : 'var(--success-700)'}}>{formatCurrency(balanceDue)}</p>
-            <span className={`acc-status-badge ${invoice.status || 'pending'}`} style={{fontSize:'11px',marginTop:'4px'}}>
-              {(invoice.status || 'pending').charAt(0).toUpperCase() + (invoice.status || 'pending').slice(1)}
-            </span>
+        <div className="st-summary">
+          <div className="st-summary-card">
+            <span>Invoice total</span>
+            <strong>{formatCurrency(invoice.total)}</strong>
+            <small>Issued {fmtDay(invoice.date)} · Due {fmtDay(invoice.dueDate)}</small>
+          </div>
+          <div className="st-summary-card is-received">
+            <span>Received</span>
+            <strong>{formatCurrency(invoice.amountPaid)}</strong>
+            <small>{invoice.payments.length} payment{invoice.payments.length === 1 ? '' : 's'}</small>
+          </div>
+          <div className="st-summary-card is-credited">
+            <span>Credited</span>
+            <strong>{formatCurrency(invoice.amountCredited)}</strong>
+            <small>{invoice.creditNotes.length} credit note{invoice.creditNotes.length === 1 ? '' : 's'}</small>
+          </div>
+          <div className={`st-summary-card ${balanceDue > 0.005 ? 'is-due' : 'is-clear'}`}>
+            <span>Balance due</span>
+            <strong>{formatCurrency(balanceDue)}</strong>
+            <span className={`acc-status-badge ${statusLabel.startsWith('Partially') ? 'partial' : invoice.status}`} style={{ marginTop: '6px', display: 'inline-block' }}>{statusLabel}</span>
+            <div className="st-progress" aria-hidden="true">
+              <i className="is-paid" style={{ width: `${pct(invoice.amountPaid)}%` }} />
+              <i className="is-credit" style={{ width: `${pct(invoice.amountCredited)}%` }} />
+            </div>
           </div>
         </div>
 
-        {/* Payment Recording Form */}
-        {showPaymentForm && (
-          <div className="acc-table-container" style={{padding:'24px',marginBottom:'24px',border:'2px solid var(--primary-400)'}}>
-            <h3 style={{margin:'0 0 16px',fontSize:'16px',fontWeight:600}}>{ICONS.creditCard} Record Payment</h3>
-            <form onSubmit={handleRecordPayment}>
-              <div className="acc-form-row">
-                <div className="acc-form-group"><label>Amount *</label><input type="number" min="0" step="0.01" value={paymentData.amount} onChange={(e) => setPaymentData({...paymentData, amount: e.target.value})} required /></div>
-                <div className="acc-form-group"><label>Date *</label><input type="date" value={paymentData.date} onChange={(e) => setPaymentData({...paymentData, date: e.target.value})} required /></div>
-              </div>
-              <div className="acc-form-row">
-                <div className="acc-form-group"><label>Payment Method</label>
-                  <select value={paymentData.method} onChange={(e) => setPaymentData({...paymentData, method: e.target.value})}>
-                    <option>Bank Transfer</option><option>Cash</option><option>UPI</option><option>Cheque</option><option>Credit Card</option>
-                  </select>
-                </div>
-                <div className="acc-form-group"><label>Reference</label><input type="text" value={paymentData.reference} onChange={(e) => setPaymentData({...paymentData, reference: e.target.value})} placeholder="e.g., NEFT-001" /></div>
-              </div>
-              <div style={{display:'flex',gap:'8px',justifyContent:'flex-end'}}>
-                <button type="button" className="acc-btn acc-btn-secondary" onClick={() => setShowPaymentForm(false)}>Cancel</button>
-                <button type="submit" className="acc-btn acc-btn-primary" disabled={actionLoading}>{actionLoading ? 'Saving...' : 'Save Payment'}</button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Payment History */}
-        {(invoice.payments?.length > 0) && (
-          <div className="acc-table-container" style={{marginBottom:'24px'}}>
-            <div className="acc-table-toolbar"><h3 style={{margin:0}}>Payment History</h3></div>
+        {history.length > 0 && (
+          <div className="acc-table-container st-history" style={{ marginBottom: '24px' }}>
+            <div className="acc-table-toolbar"><h3 style={{ margin: 0 }}>Payments &amp; credit notes</h3></div>
             <table className="acc-table">
-              <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
+              <thead><tr><th>Date</th><th>Type</th><th>Details</th><th style={{ textAlign: 'right' }}>Amount</th><th aria-label="Actions" /></tr></thead>
               <tbody>
-                {invoice.payments.map((p, idx) => (
-                  <tr key={idx}>
-                    <td>{p.date ? new Date(p.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
-                    <td>{p.method || p.paymentMethod || '—'}</td>
-                    <td style={{fontFamily:'monospace'}}>{p.reference || '-'}</td>
-                    <td style={{textAlign:'right'}}><span className="acc-amount credit">{formatCurrency(p.amount)}</span></td>
+                {history.map((h) => (
+                  <tr key={`${h.kind}-${h.id}`}>
+                    <td>{fmtDay(h.date)}</td>
+                    <td><span className={`st-kind ${h.kind === 'payment' ? 'is-payment' : 'is-credit'}`}>{h.kind === 'payment' ? 'Payment' : 'Credit note'}</span></td>
+                    <td>
+                      {h.label}{h.ref ? ` · ${h.ref}` : ''}
+                      {h.note && <span className="st-sub">{h.note}</span>}
+                    </td>
+                    <td style={{ textAlign: 'right' }}><span className={`acc-amount ${h.kind === 'payment' ? 'credit' : ''}`}>{h.kind === 'credit' ? '− ' : ''}{formatCurrency(h.amount)}</span></td>
+                    <td style={{ textAlign: 'right' }}><button type="button" className="st-void" onClick={() => handleVoid(h)} disabled={actionLoading}>Void</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -888,6 +885,13 @@ ${stylesHTML}
         </div>
 
         {invoice.notes && <div style={{marginTop:'24px',padding:'16px',background:'var(--neutral-50)',borderRadius:'10px',fontSize:'14px',color:'var(--neutral-600)'}}><strong>Notes:</strong> {invoice.notes}</div>}
+
+        {dialog === 'payment' && (
+          <InvoicePaymentModal invoice={invoice} outstanding={balanceDue} onDone={handleSettled} onClose={() => setDialog(null)} />
+        )}
+        {dialog === 'credit' && (
+          <CreditNoteModal invoice={invoice} outstanding={balanceDue} onDone={handleSettled} onClose={() => setDialog(null)} />
+        )}
 
         {/* Print Preview Modal */}
         {showPrintPreview && (

@@ -1,0 +1,113 @@
+/* ============================================================================
+   Rich-text editor (rte-*)
+   ============================================================================ */
+.rte {
+  width: 100%;
+  border: 1px solid var(--neutral-200);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.rte:focus-within {
+  border-color: var(--primary-400);
+  box-shadow: 0 0 0 3px var(--primary-50);
+}
+
+.rte-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--neutral-200);
+  background: var(--neutral-50);
+}
+
+.rte-btn {
+  height: 28px;
+  min-width: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--neutral-600);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rte-btn:hover:not(:disabled) { background: var(--neutral-200); color: var(--neutral-900, #111827); }
+.rte-btn.is-on { background: var(--primary-100, #EDE9FE); color: var(--primary-700); }
+.rte-btn:disabled { opacity: 0.35; cursor: default; }
+.rte-btn-text { padding: 0 8px; color: var(--primary-700); }
+
+.rte-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 3px;
+  background: var(--neutral-200);
+}
+
+.rte-spacer { flex: 1; }
+
+.rte-scroll {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.rte-content {
+  min-height: inherit;
+  padding: 12px 14px;
+  outline: none;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--neutral-800);
+}
+
+.rte-content > * + * { margin-top: 0.5em; }
+.rte-content p { margin: 0; }
+.rte-content h2 { font-size: 16px; font-weight: 700; margin: 0.6em 0 0.2em; }
+.rte-content h3 { font-size: 14px; font-weight: 700; margin: 0.6em 0 0.2em; }
+.rte-content ol,
+.rte-content ul { padding-left: 22px; margin: 0; }
+.rte-content li + li { margin-top: 4px; }
+.rte-content hr { border: none; border-top: 1px solid var(--neutral-300); margin: 10px 0; }
+
+.rte-content table {
+  width: 100%;
+  margin: 6px 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.rte-content th,
+.rte-content td {
+  border: 1px solid var(--neutral-300);
+  padding: 4px 8px;
+  vertical-align: top;
+  text-align: left;
+}
+
+.rte-content th { background: var(--neutral-50); font-weight: 600; }
+.rte-content .selectedCell { background: var(--primary-50); }
+
+.rte-bank {
+  margin: 6px 0;
+  padding: 10px 12px;
+  border: 1.5px dashed var(--primary-300, #C4B5FD);
+  border-radius: 8px;
+  background: var(--primary-50);
+  color: var(--primary-700);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: grab;
+}
+
+.rte-bank::before { content: 'Bank details table — filled in from Business & Tax Details'; }
+.rte-bank.ProseMirror-selectednode { outline: 2px solid var(--primary-500); }

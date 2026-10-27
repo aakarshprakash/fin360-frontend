@@ -1,10 +1,11 @@
 // Customer Modal - Create/Edit accounting customers
 import { useState, useEffect } from 'react';
+import { GST_STATES, panFromGstin, stateFromGstin } from './invoiceFormat';
 import '../../styles/Accounting.css';
 
 function CustomerModal({ customer, onSave, onClose }) {
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', gstNumber: '', address: '',
+    name: '', email: '', phone: '', contactPerson: '', gstNumber: '', pan: '', address: '', state: '',
     currency: 'INR', creditLimit: 0, balance: 0,
   });
 
@@ -41,12 +42,35 @@ function CustomerModal({ customer, onSave, onClose }) {
               </div>
             </div>
             <div className="acc-form-group">
-              <label>GST Number</label>
-              <input type="text" value={form.gstNumber} onChange={(e) => setForm({...form, gstNumber: e.target.value})} placeholder="e.g., 27AABCU9603R1ZM" />
+              <label htmlFor="cust-contact">Contact Person</label>
+              <input id="cust-contact" type="text" maxLength={150} value={form.contactPerson || ''} onChange={(e) => setForm({...form, contactPerson: e.target.value})} placeholder="e.g., Mr. Siby James – 94471 44093" />
+            </div>
+            <div className="acc-form-row">
+              <div className="acc-form-group">
+                <label htmlFor="cust-gst">GST Number</label>
+                <input id="cust-gst" type="text" value={form.gstNumber || ''} placeholder="e.g., 27AABCU9603R1ZM"
+                  onChange={(e) => {
+                    const gstNumber = e.target.value.toUpperCase();
+                    setForm({ ...form, gstNumber, state: form.state || stateFromGstin(gstNumber) });
+                  }} />
+              </div>
+              <div className="acc-form-group">
+                <label htmlFor="cust-pan">PAN</label>
+                <input id="cust-pan" type="text" maxLength={20} value={form.pan || ''} onChange={(e) => setForm({...form, pan: e.target.value.toUpperCase()})}
+                  placeholder={panFromGstin(form.gstNumber) || 'e.g., AAACU9603R'} />
+              </div>
             </div>
             <div className="acc-form-group">
               <label>Address</label>
-              <textarea value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} />
+              <textarea value={form.address || ''} onChange={(e) => setForm({...form, address: e.target.value})} />
+            </div>
+            <div className="acc-form-group">
+              <label htmlFor="cust-state">State</label>
+              <select id="cust-state" value={form.state || ''} onChange={(e) => setForm({...form, state: e.target.value})}>
+                <option value="">Select state</option>
+                {form.state && !GST_STATES.includes(form.state) && <option value={form.state}>{form.state}</option>}
+                {GST_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
             </div>
             <div className="acc-form-row">
               <div className="acc-form-group">
