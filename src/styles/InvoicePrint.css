@@ -503,9 +503,9 @@
 .bx-pre { white-space: pre-line; }
 .bx-pre-inline { white-space: pre-line; }
 
-/* Letterhead: logo in an outer column, text centred on the full box width.
-   The two outer columns share the leftover space equally, so the text is
-   truly centred; when it is too wide it only gives up what the logo needs. */
+/* Letterhead: logo | divider | details, the group centred in the box.
+   Details sit flush against the divider (left-aligned, or right-aligned
+   when the logo is on the right). Centre logo or no logo: stacked, centred. */
 .bx-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -515,12 +515,40 @@
   padding: 2mm 3mm 1.5mm;
 }
 
-.bx-head.has-logo { grid-template-columns: 1fr auto 1fr; }
-.bx-head.has-logo > .bx-logo { grid-column: 1; justify-self: start; }
-.bx-head.has-logo > .bx-co { grid-column: 2; }
-.bx-logo-right .bx-head.has-logo > .bx-logo { grid-column: 3; justify-self: end; }
+.bx-head.has-logo {
+  grid-template-columns: auto minmax(0, max-content);
+  justify-content: center;
+  gap: 6mm;
+}
+.bx-head.has-logo > .bx-logo { grid-column: 1; justify-self: end; }
+.bx-head.has-logo > .bx-co {
+  grid-column: 2;
+  justify-self: start;
+  text-align: left;
+  border-left: 0.75pt solid #9CA3AF;
+  padding-left: 6mm;
+}
+
+.bx-logo-right .bx-head.has-logo { grid-template-columns: minmax(0, max-content) auto; }
+.bx-logo-right .bx-head.has-logo > .bx-logo { grid-column: 2; justify-self: start; }
+.bx-logo-right .bx-head.has-logo > .bx-co {
+  grid-column: 1;
+  justify-self: end;
+  text-align: right;
+  border-left: 0;
+  border-right: 0.75pt solid #9CA3AF;
+  padding-left: 0;
+  padding-right: 6mm;
+}
+
 .bx-logo-center .bx-head.has-logo { grid-template-columns: minmax(0, 1fr); }
-.bx-logo-center .bx-head.has-logo > .bx-co { grid-column: 1; }
+.bx-logo-center .bx-head.has-logo > .bx-co {
+  grid-column: 1;
+  justify-self: center;
+  text-align: center;
+  border: 0;
+  padding: 0;
+}
 
 .bx-logo {
   height: var(--logo-h);
