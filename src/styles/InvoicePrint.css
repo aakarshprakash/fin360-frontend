@@ -503,9 +503,11 @@
 .bx-pre { white-space: pre-line; }
 .bx-pre-inline { white-space: pre-line; }
 
-/* Letterhead: logo | divider | details, the group centred in the box.
-   Details sit flush against the divider (left-aligned, or right-aligned
-   when the logo is on the right). Centre logo or no logo: stacked, centred. */
+/* Letterhead: logo | divider | details. Two equal halves, like the .bx-split
+   rows below, so the divider lines up with their column rule; the logo is
+   centred in its half and the details start next to the divider (left-aligned,
+   or right-aligned when the logo is on the right). Centre logo or no logo:
+   stacked, centred. */
 .bx-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -516,35 +518,38 @@
 }
 
 .bx-head.has-logo {
-  grid-template-columns: auto minmax(0, max-content);
-  justify-content: center;
-  gap: 6mm;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
-.bx-head.has-logo > .bx-logo { grid-column: 1; justify-self: end; }
+.bx-head.has-logo > .bx-logo {
+  grid-column: 1;
+  justify-self: center;
+  max-width: min(calc(var(--logo-h) * 2.2), calc(100% - 6mm));
+}
 .bx-head.has-logo > .bx-co {
   grid-column: 2;
-  justify-self: start;
+  justify-self: stretch;
+  max-width: none;
   text-align: left;
   border-left: 0.75pt solid #9CA3AF;
-  padding-left: 6mm;
+  padding: 0 2.5mm;
 }
 
-.bx-logo-right .bx-head.has-logo { grid-template-columns: minmax(0, max-content) auto; }
-.bx-logo-right .bx-head.has-logo > .bx-logo { grid-column: 2; justify-self: start; }
+.bx-logo-right .bx-head.has-logo > .bx-logo { grid-column: 2; }
 .bx-logo-right .bx-head.has-logo > .bx-co {
   grid-column: 1;
-  justify-self: end;
   text-align: right;
   border-left: 0;
   border-right: 0.75pt solid #9CA3AF;
-  padding-left: 0;
-  padding-right: 6mm;
 }
 
-.bx-logo-center .bx-head.has-logo { grid-template-columns: minmax(0, 1fr); }
+.bx-logo-center .bx-head.has-logo { grid-template-columns: minmax(0, 1fr); padding: 2mm 3mm 1.5mm; }
 .bx-logo-center .bx-head.has-logo > .bx-co {
   grid-column: 1;
   justify-self: center;
+  max-width: 150mm;
   text-align: center;
   border: 0;
   padding: 0;
