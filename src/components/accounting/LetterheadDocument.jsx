@@ -128,11 +128,18 @@ function LetterheadDocument({ company, blocks, groups = {}, contentKey, showPage
     measure();
     const root = measureRef.current;
     if (!root) return undefined;
-    // Pictures and web fonts change heights once loaded (also in the print window)
-    const imgs = [...root.querySelectorAll('img')].filter((img) => !img.complete);
-    imgs.forEach((img) => img.addEventListener('load', measure));
-    root.ownerDocument.fonts?.ready.then(measure);
-    return () => imgs.forEach((img) => img.removeEventListener('load', measure));
+    // Heights change when stylesheets, pictures and web fonts arrive. The print
+    // window renders before its stylesheet has loaded, so this is what gets its
+    // pages right. Its own window's observer: one from another window won't fire.
+    const doc = root.ownerDocument;
+    const observer = new doc.defaultView.ResizeObserver(measure);
+    observer.observe(root.querySelector('.lhd-measure-body'));
+    const sheets = [...doc.querySelectorAll('link[rel="stylesheet"]')];
+    sheets.forEach((link) => link.addEventListener('load', measure));
+    return () => {
+      observer.disconnect();
+      sheets.forEach((link) => link.removeEventListener('load', measure));
+    };
   }, [measure]);
 
   const allIndexes = blocks.map((_, i) => i);
@@ -158,7 +165,7 @@ function LetterheadDocument({ company, blocks, groups = {}, contentKey, showPage
       {/* Hidden copy used only for measuring */}
       <div className="lhd-measure" ref={measureRef} aria-hidden="true" style={{ width: `${210 - side * 2}mm` }}>
         <div className="lhd-probe-height" style={{ height: `${297 - top - bottom}mm` }} />
-        {renderBlocks(allIndexes, blocks, groups, true)}
+        <div className="lhd-measure-body">{renderBlocks(allIndexes, blocks, groups, true)}</div>
       </div>
     </div>
   );

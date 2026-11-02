@@ -22,7 +22,8 @@ function InvoiceBoxedView({ M }) {
     if (!showPageNumber || !el) return undefined;
     const measure = () => setPages(Math.max(1, Math.ceil((el.offsetHeight - 4) / A4_HEIGHT_PX)));
     measure();
-    const ro = new ResizeObserver(measure);
+    // Its own window's observer, for the print window
+    const ro = new el.ownerDocument.defaultView.ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, [showPageNumber]);
