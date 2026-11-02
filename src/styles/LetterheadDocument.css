@@ -1,0 +1,356 @@
+/* ============================================================================
+   Documents on a full-page letterhead: page shell (lhd-*) and the invoice /
+   quotation content printed on it (lhp-*). Backgrounds stay transparent so the
+   letterhead's watermark shows through.
+   ============================================================================ */
+.inv-print.lhd-doc {
+  --lhp-accent: #0F3D6E;
+  --lhp-accent-text: #FFFFFF;
+  --lhp-rule: 0.75pt solid #94A3B8;
+  --lhp-fs: 9.5pt;
+  width: 210mm;
+  max-width: 210mm;
+  min-height: 0;
+  padding: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: var(--lhp-font, Arial, Helvetica, sans-serif);
+  font-size: var(--lhp-fs);
+  line-height: 1.4;
+  color: #111827;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.lhd-doc *,
+.lhd-doc *::before,
+.lhd-doc *::after { box-sizing: border-box; }
+
+.lhd-doc p,
+.lhd-doc h1,
+.lhd-doc h2,
+.lhd-doc h3,
+.lhd-doc ul,
+.lhd-doc ol { margin: 0; }
+
+.lhd-page {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+}
+
+.lhd-page + .lhd-page { margin-top: 8mm; }
+
+.lhd-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.lhd-content { position: absolute; }
+
+/* Margins stay inside the block so measured heights include them */
+.lhd-block { display: flow-root; }
+
+.lhd-pageno {
+  position: absolute;
+  font-size: 8pt;
+  color: #475569;
+}
+
+.lhd-measure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+@media print {
+  .inv-print.lhd-doc { margin: 0 !important; width: 210mm; max-width: none; }
+  .lhd-page {
+    /* A hair under A4, or rounding pushes a blank page after each sheet */
+    height: 296.8mm;
+    box-shadow: none;
+    break-after: page;
+  }
+  .lhd-page:last-of-type { break-after: auto; }
+  .lhd-page + .lhd-page { margin-top: 0; }
+  .lhd-measure { display: none; }
+}
+
+/* ── Tables ───────────────────────────────────────────────────────────── */
+.lhd-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: var(--lhp-fs);
+}
+
+.lhd-table thead th {
+  padding: 1.8mm 1.2mm;
+  background: var(--lhp-accent);
+  color: var(--lhp-accent-text);
+  font-size: calc(var(--lhp-fs) * 0.9);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.lhd-table td {
+  padding: 1.4mm 1.2mm;
+  vertical-align: top;
+  border-left: var(--lhp-rule);
+  border-right: var(--lhp-rule);
+  overflow-wrap: anywhere;
+}
+
+/* The table closes on every page it reaches */
+.lhd-table tbody:last-child tr:last-child td { border-bottom: var(--lhp-rule); }
+.lhd-table tr.lhp-row-first td { border-top: var(--lhp-rule); }
+
+.lhp-num { text-align: right !important; white-space: nowrap; }
+.lhp-center { text-align: center !important; }
+.lhp-strong { font-weight: 700; }
+
+/* Continuation rows of one quotation item: no padding gaps between them */
+.lhd-table td.lhp-tight { padding-top: 0.3mm; padding-bottom: 0.3mm; }
+
+/* ── Title & parties ──────────────────────────────────────────────────── */
+.lhp-title {
+  margin-bottom: 3mm;
+  text-align: center;
+}
+
+.lhp-title h2 {
+  display: inline-block;
+  font-size: calc(var(--lhp-fs) * 1.6);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--lhp-accent);
+  text-decoration: underline;
+  text-underline-offset: 1.2mm;
+}
+
+.lhp-title p {
+  margin-top: 0.8mm;
+  font-size: calc(var(--lhp-fs) * 0.82);
+  color: #475569;
+}
+
+.lhp-taxids {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5mm 5mm;
+  margin-top: 1mm;
+  font-size: calc(var(--lhp-fs) * 0.9);
+}
+
+.lhp-parties {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 62mm;
+  gap: 4mm;
+  margin-bottom: 3.5mm;
+}
+
+.lhp-parties.no-ship { grid-template-columns: minmax(0, 1fr) 66mm; }
+
+.lhp-label {
+  margin-bottom: 0.8mm !important;
+  font-size: calc(var(--lhp-fs) * 0.8);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lhp-accent);
+}
+
+.lhp-party p { line-height: 1.35; overflow-wrap: anywhere; }
+.lhp-party .lhp-party-name { font-weight: 700; font-size: calc(var(--lhp-fs) * 1.05); }
+.lhp-pre { white-space: pre-line; }
+
+.lhp-kv {
+  width: 100%;
+  align-self: start;
+  border-collapse: collapse;
+}
+
+.lhp-kv th,
+.lhp-kv td {
+  padding: 0.5mm 0;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 400;
+}
+
+.lhp-kv th { width: 44%; padding-right: 2mm; color: #475569; }
+.lhp-kv td { font-weight: 600; overflow-wrap: anywhere; }
+
+/* ── Totals ───────────────────────────────────────────────────────────── */
+.lhp-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 68mm;
+  gap: 5mm;
+  padding-top: 3mm;
+}
+
+.lhp-summary-left > * + * { margin-top: 2mm; }
+.lhp-words { font-weight: 700; }
+.lhp-bank { white-space: pre-line; }
+
+.lhp-totals { width: 100%; border-collapse: collapse; }
+
+.lhp-totals th,
+.lhp-totals td {
+  padding: 0.7mm 0;
+  text-align: right;
+  font-weight: 400;
+}
+
+.lhp-totals th { text-align: left; }
+.lhp-totals td { white-space: nowrap; padding-left: 3mm; }
+
+.lhp-totals .lhp-grand th,
+.lhp-totals .lhp-grand td {
+  padding: 1.6mm 2mm;
+  background: var(--lhp-accent);
+  color: var(--lhp-accent-text);
+  font-weight: 700;
+  font-size: calc(var(--lhp-fs) * 1.1);
+}
+
+.lhp-totals .lhp-due th,
+.lhp-totals .lhp-due td { font-weight: 700; border-top: var(--lhp-rule); }
+
+.lhp-para { padding-top: 2mm; }
+.lhp-small { font-size: calc(var(--lhp-fs) * 0.82); color: #374151; }
+.lhp-fields { display: flex; flex-wrap: wrap; gap: 0.5mm 6mm; padding-top: 2mm; }
+
+/* ── Signature ────────────────────────────────────────────────────────── */
+.lhp-signrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8mm;
+  padding-top: 4mm;
+}
+
+.lhp-sign {
+  width: 62mm;
+  flex-shrink: 0;
+  margin-left: auto;
+  text-align: center;
+}
+
+.lhp-sign-for { font-weight: 700; font-size: calc(var(--lhp-fs) * 0.95); }
+
+.lhp-sign-space {
+  height: 20mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lhp-sign-space img { max-height: 19mm; max-width: 45mm; object-fit: contain; }
+.lhp-sign-label { font-weight: 600; font-size: calc(var(--lhp-fs) * 0.95); }
+.lhp-signrow-left > * + * { margin-top: 1.5mm; }
+
+/* ── Quotation items ──────────────────────────────────────────────────── */
+.lhp-item-name { font-weight: 700; text-align: center; text-decoration: underline; text-underline-offset: 0.7mm; }
+.lhp-item-model { text-align: center; font-size: calc(var(--lhp-fs) * 0.88); color: #475569; }
+
+.lhp-item-img {
+  display: block;
+  max-width: 85%;
+  max-height: 72mm;
+  margin: 1.5mm auto;
+  object-fit: contain;
+}
+
+.lhp-item-head { font-weight: 700; font-size: calc(var(--lhp-fs) * 0.95); text-decoration: underline; padding-top: 1mm; }
+.lhp-feature { padding-left: 7mm !important; list-style: disc; font-size: calc(var(--lhp-fs) * 0.95); line-height: 1.3; }
+
+.lhd-table td.lhp-total-label { text-align: right; font-weight: 600; border-right: none; }
+.lhd-table tr.lhp-grand-row td { font-weight: 700; font-size: calc(var(--lhp-fs) * 1.08); background: rgba(15, 61, 110, 0.08); }
+.lhd-table tr.lhp-words-row td { border-right: var(--lhp-rule); }
+
+/* ── Terms ────────────────────────────────────────────────────────────── */
+.lhp-terms-title {
+  padding-bottom: 3mm;
+  text-align: center;
+  font-size: calc(var(--lhp-fs) * 1.15);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 1mm;
+  color: var(--lhp-accent);
+}
+
+.lhp-rich { padding-bottom: 1.2mm; line-height: 1.42; }
+.lhp-rich ol,
+.lhp-rich ul { padding-left: 6.5mm; }
+.lhp-rich ol > li::marker { font-weight: 700; }
+.lhp-rich h2 { font-size: calc(var(--lhp-fs) * 1.15); font-weight: 700; }
+.lhp-rich h3 { font-size: calc(var(--lhp-fs) * 1.05); font-weight: 700; }
+.lhp-rich hr { border: none; border-top: var(--lhp-rule); margin: 2mm 0; }
+.lhp-rich blockquote { margin: 0; padding-left: 4mm; border-left: var(--lhp-rule); }
+.lhp-rich table { width: 100%; border-collapse: collapse; margin: 1mm 0; }
+.lhp-rich th,
+.lhp-rich td { border: var(--lhp-rule); padding: 0.6mm 2mm; text-align: left; vertical-align: top; font-weight: 400; }
+.lhp-rich table p { margin: 0; }
+.lhp-rich .qlh-bank { width: 65%; margin: 1mm 0; }
+.lhp-rich .qlh-bank th { width: 46%; text-transform: uppercase; }
+.lhp-rich .qlh-bank th,
+.lhp-rich .qlh-bank td { border: var(--lhp-rule); padding: 0.6mm 2mm; }
+
+/* ── Classic GST grid on a letterhead (lhb-*, with the bx-* rows) ──────── */
+.inv-print.lhd-doc.lhb-doc {
+  --lhp-rule: var(--bx-rule);
+  color: #111827;
+}
+
+/* Every row is fully ruled; overlapping by one line makes shared edges single */
+.lhb-doc .bx-row,
+.lhb-doc .bx-title {
+  border: var(--bx-rule);
+  margin-top: -0.75pt;
+}
+
+.lhb-doc .bx-kv,
+.lhb-doc .bx-totals { border-collapse: collapse; }
+.lhb-doc .bx-totals { width: 100%; }
+
+.lhb-doc .lhd-table {
+  margin-top: -0.75pt;
+  table-layout: fixed;
+}
+
+.lhb-doc .lhd-table thead th {
+  padding: 0.9mm 1.2mm;
+  background: transparent;
+  color: inherit;
+  font-size: calc(var(--inv-fs) * 0.98);
+  line-height: 1.25;
+  text-align: center;
+  border: var(--bx-rule);
+}
+
+.lhb-doc .lhd-table td {
+  padding: 1.2mm 1.5mm 0.4mm;
+  font-size: var(--inv-fs);
+}
+
+.lhb-doc .lhd-table td.bx-num { text-align: right; }
+.lhb-doc .lhd-table tr.lhb-fill td { padding: 0; }
+
+.lhb-below {
+  padding-top: 1mm;
+  font-size: calc(var(--inv-fs) * 0.85);
+  color: #374151;
+}

@@ -6,7 +6,9 @@
 export const DEFAULT_DECLARATION = 'Certified that the particulars given above are true and correct and the amount indicated '
   + 'represents the price actually charged and that there is no additional consideration directly or indirectly from the buyer';
 
-// design: 'modern' (open layout) or 'boxed' (ruled grid, classic GST format).
+// design: 'modern' (open layout), 'boxed' (ruled grid, classic GST format),
+// 'page' (open layout on the company's full-page letterhead) or 'page-boxed'
+// (the ruled grid on that letterhead).
 // fields: custom fields whose values are typed on each invoice; position
 // 'details' prints beside Invoice No/Date, 'footer' above the signature.
 const LETTERHEAD = {
@@ -81,6 +83,20 @@ const CLASSIC = {
   signature: { show: true, forCompany: true },
 };
 
+// Printed on the company's own full-page letterhead, which carries name and logo
+const FULLPAGE = {
+  ...LETTERHEAD,
+  style: { design: 'page', accentColor: '#0F3D6E', font: 'clean', textSize: 'normal', tableStyle: 'solid' },
+  header: { ...LETTERHEAD.header, title: 'TAX INVOICE' },
+  sections: { ...LETTERHEAD.sections, computerGenerated: false },
+};
+
+// The Classic GST grid inside the company's full-page letterhead
+const CLASSIC_ON_LETTERHEAD = {
+  ...CLASSIC,
+  style: { ...CLASSIC.style, design: 'page-boxed', accentColor: '#0F3D6E' },
+};
+
 export const INVOICE_TEMPLATES = [
   {
     id: 'default',
@@ -99,6 +115,18 @@ export const INVOICE_TEMPLATES = [
     label: 'Classic GST',
     description: 'Ruled boxes: CIN/GSTIN/PAN, Bill To & Ship To, UOM column, order and dispatch fields, declaration and receiver note.',
     layout: CLASSIC,
+  },
+  {
+    id: 'fullpage',
+    label: 'Full-page letterhead',
+    description: 'Prints on your own A4 letterhead (PDF or image), repeated on every page, with text kept clear of its header and footer.',
+    layout: FULLPAGE,
+  },
+  {
+    id: 'classicpage',
+    label: 'Classic GST on letterhead',
+    description: 'The Classic GST ruled format printed on your own A4 letterhead, with column lines running down to the totals.',
+    layout: CLASSIC_ON_LETTERHEAD,
   },
 ];
 

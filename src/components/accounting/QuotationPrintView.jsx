@@ -4,6 +4,7 @@
 // and terms detail is pulled from Accounting Settings > Company / Quotation Template.
 import { API_ORIGIN } from '../../utils/api';
 import QuotationLetterheadView from './QuotationLetterheadView';
+import QuotationPageView from './QuotationPageView';
 import { resolveQuotationSettings } from './quotationTemplates';
 
 const defaultCompany = {
@@ -34,6 +35,9 @@ function numberToWords(num) {
 }
 
 function QuotationPrintView({ quotation, company, quotationSettings }) {
+  if (quotationSettings?.design === 'fullpage') {
+    return <QuotationPageView quotation={quotation} company={company} settings={resolveQuotationSettings(quotationSettings)} />;
+  }
   if (quotationSettings?.design === 'letterhead') {
     return <QuotationLetterheadView quotation={quotation} company={company} settings={resolveQuotationSettings(quotationSettings)} />;
   }

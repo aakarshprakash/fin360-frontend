@@ -159,6 +159,7 @@
 
 .itb-segmented {
   display: flex;
+  flex-wrap: wrap;
   padding: 3px;
   gap: 3px;
   border-radius: 9px;
@@ -166,7 +167,7 @@
 }
 
 .itb-segmented button {
-  flex: 1;
+  flex: 1 1 auto;
   padding: 6px 8px;
   border: none;
   border-radius: 7px;
@@ -512,3 +513,7 @@
 @media (max-width: 1180px) {
   .itb.qtb-wide { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Letterhead thumbnail in the builder */
+.lhpanel-art img { max-height: 240px; width: auto; max-width: 100%; margin: 0 auto; }
+.qtb-designs.qtb-designs { grid-template-columns: 1fr; }

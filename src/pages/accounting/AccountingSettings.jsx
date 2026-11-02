@@ -112,6 +112,7 @@ function AccountingSettings() {
           ? { ...template, layout: { ...template.layout, fields: fields.filter((f) => f.label.trim()).map((f) => ({ ...f, label: f.label.trim() })) } }
           : template;
         await updateInvoiceTemplateSettings(toSave);
+        await updateAccountingSettings({ company }); // letterhead margins
         if (toSave !== template) setTemplate(toSave);
       } else {
         await updateAccountingSettings({ company, accounting, numbering, quotation: quotationSettings });
@@ -446,7 +447,7 @@ function AccountingSettings() {
         {/* Invoice Template Settings */}
         {activeTab === 'invoice' && (
           <>
-            <InvoiceTemplateBuilder template={template} onChange={setTemplate} company={company} methods={methods} />
+            <InvoiceTemplateBuilder template={template} onChange={setTemplate} company={company} onCompanyChange={setCompany} methods={methods} />
             <div className="acc-table-container" style={{padding:'24px', marginTop:'16px'}}>
               <h3 style={{margin:'0 0 18px',fontSize:'16px',fontWeight:600}}>Invoice Defaults</h3>
               <div className="acc-form-row">
@@ -463,7 +464,7 @@ function AccountingSettings() {
 
         {/* Quotation Template Settings */}
         {activeTab === 'quotation' && (
-          <QuotationTemplateBuilder settings={quotationSettings} onChange={setQuotationSettings} company={company} />
+          <QuotationTemplateBuilder settings={quotationSettings} onChange={setQuotationSettings} company={company} onCompanyChange={setCompany} />
         )}
 
         {/* Payment Methods */}

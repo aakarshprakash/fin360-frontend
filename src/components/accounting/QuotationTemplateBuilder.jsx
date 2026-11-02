@@ -13,6 +13,7 @@ import { termsToHtml } from './richText';
 // The editor (TipTap) loads only when this settings page needs it
 const RichTextEditor = lazy(() => import('./RichTextEditor'));
 import { Panel, ScaledPreview, Segmented, TextField, Toggle } from './TemplateBuilderParts';
+import LetterheadPanel from './LetterheadPanel';
 import '../../styles/InvoiceTemplateBuilder.css';
 
 const SAMPLE_PRODUCT = {
@@ -93,10 +94,12 @@ function ImageSlot({ slot, path, onChange, hint }) {
   );
 }
 
-function QuotationTemplateBuilder({ settings, onChange, company }) {
+function QuotationTemplateBuilder({ settings, onChange, company, onCompanyChange }) {
   const qs = resolveQuotationSettings(settings);
   const set = (key) => (value) => onChange({ ...qs, [key]: value });
-  const letterhead = qs.design === 'letterhead';
+  const artwork = qs.design === 'letterhead'; // separate header and footer images
+  const fullpage = qs.design === 'fullpage'; // one full-page letterhead
+  const letterhead = artwork || fullpage;
   // Older settings kept terms as a list; the editor starts from that
   const termsHtml = qs.termsHtml || termsToHtml(qs.terms);
 
@@ -120,7 +123,7 @@ function QuotationTemplateBuilder({ settings, onChange, company }) {
         <div className="itb-presets">
           <span className="itb-label">Design</span>
           <div className="itb-preset-list qtb-designs" role="radiogroup" aria-label="Design">
-            {[['classic', 'Classic', 'Company block, items table, terms table'], ['letterhead', 'Letterhead', 'Your header & footer artwork, product pictures, terms page']].map(([id, label, desc]) => (
+            {[['classic', 'Classic', 'Company block, items table, terms table'], ['letterhead', 'Letterhead', 'Your header & footer artwork, product pictures, terms page'], ['fullpage', 'Full-page letterhead', 'Prints on your own A4 letterhead (PDF or image), every page']].map(([id, label, desc]) => (
               <button type="button" key={id} role="radio" aria-checked={qs.design === id}
                 className={`itb-preset ${qs.design === id ? 'is-on' : ''}`} onClick={() => set('design')(id)}>
                 <strong>{label}</strong>
@@ -141,16 +144,18 @@ function QuotationTemplateBuilder({ settings, onChange, company }) {
 
         {letterhead && (
           <>
-            <Panel title="Header" open>
+            {fullpage && <LetterheadPanel company={company} onCompanyChange={onCompanyChange} />}
+
+            {artwork && <Panel title="Header" open>
               <Segmented label="Header" value={qs.headerType} onChange={set('headerType')}
                 options={[['image', 'Image'], ['company', 'Company details'], ['none', 'None']]} />
               {qs.headerType === 'image' && (
                 <ImageSlot slot="header" path={qs.headerImage} onChange={set('headerImage')} hint="Full-width banner, about 2480 × 500 px" />
               )}
               {qs.headerType === 'company' && <p className="itb-hint">Logo, address and phone from Business &amp; Tax Details.</p>}
-            </Panel>
+            </Panel>}
 
-            <Panel title="Footer">
+            {artwork && <Panel title="Footer">
               <Segmented label="Footer" value={qs.footerType} onChange={set('footerType')}
                 options={[['image', 'Image'], ['text', 'Text'], ['none', 'None']]} />
               {qs.footerType === 'image' && (
@@ -161,7 +166,7 @@ function QuotationTemplateBuilder({ settings, onChange, company }) {
                   placeholder="e.g. Authorised distributor of Diabetik Foot Care India Pvt Ltd" />
               )}
               <p className="itb-hint">Header and footer repeat on every printed page.</p>
-            </Panel>
+            </Panel>}
 
             <Panel title="Quotation page">
               <TextField label="Title" value={qs.title} maxLength={60} onChange={set('title')} placeholder="QUOTATION" />
@@ -190,7 +195,7 @@ function QuotationTemplateBuilder({ settings, onChange, company }) {
       </div>
 
       <div className="itb-preview-col">
-        <p className="itb-preview-note">Live preview with sample data · A4{letterhead && qs.termsPage ? ' · 2 pages' : ''}</p>
+        <p className="itb-preview-note">Live preview with sample data · A4</p>
         <ScaledPreview autoHeight>
           <QuotationPrintView quotation={sampleQuotation(product)} company={company} quotationSettings={qs} />
         </ScaledPreview>

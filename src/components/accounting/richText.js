@@ -51,6 +51,26 @@ export function renderTermsHtml(html, bankDetails) {
   return clean.replace(new RegExp(`<div[^>]*${BANK_MARKER_ATTR}[^>]*>[\\s\\S]*?</div>`, 'g'), table);
 }
 
+// One piece of sanitised HTML per paragraph / list item, so a terms page can
+// break between them. List items keep their numbering with <ol start>.
+export function splitTermsHtml(html, bankDetails) {
+  const doc = new DOMParser().parseFromString(renderTermsHtml(html, bankDetails), 'text/html');
+  const parts = [];
+  [...doc.body.children].forEach((node) => {
+    const tag = node.tagName.toLowerCase();
+    if (tag === 'ol' || tag === 'ul') {
+      const first = Number(node.getAttribute('start')) || 1;
+      [...node.children].forEach((li, i) => {
+        const start = tag === 'ol' ? ` start="${first + i}"` : '';
+        parts.push(`<${tag}${start}>${li.outerHTML}</${tag}>`);
+      });
+    } else if (node.textContent.trim() || node.querySelector('table, hr') || tag === 'hr') {
+      parts.push(node.outerHTML);
+    }
+  });
+  return parts;
+}
+
 // Older settings stored terms as [{ title, text, showBank }]
 export function termsToHtml(terms) {
   const items = (terms || []).map((t) => {

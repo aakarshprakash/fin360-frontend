@@ -240,6 +240,14 @@ export const getStockMovements = (id) => api.get(`/accounting/products/${id}/sto
 // type: 'in' | 'out' | 'set'
 export const adjustStock = (id, data) => api.post(`/accounting/products/${id}/stock`, data);
 
+// ============ Full-page letterhead (A4 image behind invoices & quotations) ============
+export const uploadLetterhead = (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  return api.post('/accounting/settings/letterhead', formData, multipart);
+};
+export const deleteLetterhead = () => api.delete('/accounting/settings/letterhead');
+
 // ============ Quotation letterhead artwork (slot: 'header' | 'footer') ============
 export const uploadQuotationImage = (slot, file) => {
   const formData = new FormData();

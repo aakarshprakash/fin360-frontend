@@ -10,6 +10,8 @@ import {
   panFromGstin, stateCodeFor,
 } from './invoiceFormat';
 import InvoiceBoxedView from './InvoiceBoxedView';
+import InvoiceBoxedPageView from './InvoiceBoxedPageView';
+import InvoicePageView from './InvoicePageView';
 import '../../styles/InvoicePrint.css';
 
 const defaultCompany = {
@@ -51,6 +53,8 @@ function buildModel({ invoice, company, paymentMethods, template }) {
   const accent = L.style.accentColor;
 
   return {
+    // Anything that changes what prints: letterhead pages are re-measured when it changes
+    contentKey: JSON.stringify([invoice, L, termsText, footerText, co.bankDetails, co.gstNumber, co.pan, co.cin, co.companyName]),
     co,
     L,
     invoice,
@@ -110,6 +114,8 @@ function buildModel({ invoice, company, paymentMethods, template }) {
 function InvoicePrintView(props) {
   const M = buildModel(props);
   if (M.L.style.design === 'boxed') return <InvoiceBoxedView M={M} />;
+  if (M.L.style.design === 'page') return <InvoicePageView M={M} />;
+  if (M.L.style.design === 'page-boxed') return <InvoiceBoxedPageView M={M} />;
 
   const { co, L, invoice, items, cols, customer: cu } = M;
   const colCount = 5 + Object.values(cols).filter(Boolean).length;

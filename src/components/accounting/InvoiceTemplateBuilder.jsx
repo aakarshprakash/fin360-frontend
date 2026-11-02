@@ -4,6 +4,7 @@
 // stays with the page's "Save Template" button.
 import InvoicePrintView from './InvoicePrintView';
 import { Panel, ScaledPreview, Segmented, TextField, Toggle } from './TemplateBuilderParts';
+import LetterheadPanel from './LetterheadPanel';
 import {
   ACCENT_SWATCHES, INVOICE_TEMPLATES, MAX_CUSTOM_FIELDS, isCustomised, newFieldId, resolveInvoiceLayout,
 } from './invoiceTemplates';
@@ -76,7 +77,7 @@ function FieldsEditor({ fields, onChange }) {
   );
 }
 
-function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
+function InvoiceTemplateBuilder({ template, onChange, company, onCompanyChange, methods }) {
   const L = resolveInvoiceLayout(template.invoiceTheme, template.layout);
   const customised = isCustomised(template.invoiceTheme, template.layout);
 
@@ -87,6 +88,7 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
   const setText = (key) => (value) => onChange({ ...template, [key]: value });
   const setFields = (fields) => onChange({ ...template, layout: { ...L, fields } });
   const boxed = L.style.design === 'boxed';
+  const onLetterhead = L.style.design === 'page' || L.style.design === 'page-boxed';
   const sampleInvoice = {
     ...SAMPLE_INVOICE,
     extraFields: Object.fromEntries((L.fields || []).map((f) => [f.id, SAMPLE_FIELD_VALUES[f.id] ?? (f.label ? `Sample ${f.label.toLowerCase()}` : '')])),
@@ -133,9 +135,11 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
           </div>
         </div>
 
+        {onLetterhead && <LetterheadPanel company={company} onCompanyChange={onCompanyChange} />}
+
         <Panel title="Brand & style" open>
           <Segmented label="Design" value={L.style.design} onChange={set('style', 'design')}
-            options={[['modern', 'Modern'], ['boxed', 'Boxed (ruled)']]} />
+            options={[['modern', 'Modern'], ['boxed', 'Boxed (ruled)'], ['page', 'On letterhead'], ['page-boxed', 'Boxed on letterhead']]} />
           <div className="itb-field">
             <span className="itb-label">Accent colour</span>
             <div className="itb-swatches">
@@ -164,13 +168,13 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
             options={[['modern', 'Modern'], ['classic', 'Classic'], ['clean', 'Clean']]} />
           <Segmented label="Text size" value={L.style.textSize} onChange={set('style', 'textSize')}
             options={[['small', 'Small'], ['normal', 'Normal'], ['large', 'Large']]} />
-          {!boxed && (
+          {L.style.design === 'modern' && (
             <Segmented label="Item table" value={L.style.tableStyle} onChange={set('style', 'tableStyle')}
               options={[['solid', 'Solid'], ['light', 'Light'], ['lines', 'Lines']]} />
           )}
         </Panel>
 
-        <Panel title="Logo">
+        {!onLetterhead && <Panel title="Logo">
           <Toggle label="Show logo" checked={L.logo.show} onChange={set('logo', 'show')}
             hint="Upload it in Business & Tax Details" />
           <label className="itb-field">
@@ -180,16 +184,22 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
           </label>
           <Segmented label="Position" value={L.logo.position} onChange={set('logo', 'position')}
             options={[['left', 'Left'], ['center', 'Centred'], ['right', 'Right']]} />
-        </Panel>
+        </Panel>}
 
         <Panel title="Header">
           <TextField label="Document title" value={L.header.title} maxLength={40} onChange={set('header', 'title')} placeholder="Tax Invoice" />
           <TextField label="Subtitle (leave empty to hide)" value={L.header.subtitle} maxLength={60} onChange={set('header', 'subtitle')} />
-          <TextField label="Lines under company name" value={L.header.tagline} maxLength={300} multiline onChange={set('header', 'tagline')}
-            placeholder="e.g. (Under Rule 7 of GST Rules 2017)" />
-          <Toggle label="Company address" checked={L.header.showAddress} onChange={set('header', 'showAddress')} />
-          <Toggle label="Phone & email" checked={L.header.showContact} onChange={set('header', 'showContact')} />
-          <Toggle label="State" checked={L.header.showState} onChange={set('header', 'showState')} />
+          {!onLetterhead && (
+            <TextField label="Lines under company name" value={L.header.tagline} maxLength={300} multiline onChange={set('header', 'tagline')}
+              placeholder="e.g. (Under Rule 7 of GST Rules 2017)" />
+          )}
+          {!onLetterhead && (
+            <>
+              <Toggle label="Company address" checked={L.header.showAddress} onChange={set('header', 'showAddress')} />
+              <Toggle label="Phone & email" checked={L.header.showContact} onChange={set('header', 'showContact')} />
+              <Toggle label="State" checked={L.header.showState} onChange={set('header', 'showState')} />
+            </>
+          )}
           <Segmented label="GSTIN / PAN" value={L.header.taxIds} onChange={set('header', 'taxIds')}
             options={[['letterhead', 'Letterhead'], ['footer', 'Footer'], ['hidden', 'Hide']]} />
         </Panel>
@@ -267,7 +277,7 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
             <TextField label="Message" value={template.footerText} maxLength={200} onChange={setText('footerText')} placeholder="Thank you for your business!" />
           )}
           <Toggle label="“Computer-generated invoice” note" checked={L.sections.computerGenerated} onChange={set('sections', 'computerGenerated')} />
-          {boxed && <Toggle label="Page number" checked={L.sections.pageNumber} onChange={set('sections', 'pageNumber')} />}
+          {(boxed || onLetterhead) && <Toggle label="Page number" checked={L.sections.pageNumber} onChange={set('sections', 'pageNumber')} />}
         </Panel>
 
         <Panel title="Signature">
@@ -284,7 +294,7 @@ function InvoiceTemplateBuilder({ template, onChange, company, methods }) {
 
       <div className="itb-preview-col">
         <p className="itb-preview-note">Live preview with sample data · A4</p>
-        <ScaledPreview>
+        <ScaledPreview autoHeight={onLetterhead}>
           <InvoicePrintView invoice={sampleInvoice} company={company} paymentMethods={methods} template={{ ...template, layout: L }} />
         </ScaledPreview>
       </div>
