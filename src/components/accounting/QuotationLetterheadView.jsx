@@ -157,7 +157,7 @@ function QuotationLetterheadView({ quotation, company, settings }) {
           {items.map((item, idx) => {
             const p = item.product || {};
             const features = qs.showFeatures ? String(p.features || '').split('\n').map((l) => l.trim()).filter(Boolean) : [];
-            const lineAmount = num(item.quantity) * num(item.unitPrice) - num(item.discount);
+            const lineAmount = num(item.quantity) * num(item.unitPrice);
             return (
               <tr key={item.id || idx}>
                 <td className="qlh-c-sn">{idx + 1}</td>

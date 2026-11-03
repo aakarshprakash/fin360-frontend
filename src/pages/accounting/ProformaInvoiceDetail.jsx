@@ -6,14 +6,10 @@ import Layout from '../../components/Layout';
 import { getProformaInvoice, updateProformaInvoice, updateProformaInvoiceStatus, deleteProformaInvoice, convertProformaToInvoice, getAccountingSettings } from '../../utils/accountingApi';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
+import LineDiscountInput from '../../components/accounting/LineDiscountInput';
+import { GstSelect } from '../../components/accounting/GstInputs';
+import { NO_DISCOUNT, discountAsPercent, discountFromSaved, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
 import ProformaInvoicePrintView from '../../components/accounting/ProformaInvoicePrintView';
-
-const taxRateOptions = [
-  { id: 1, name: 'GST 18%', rate: 18 },
-  { id: 2, name: 'GST 12%', rate: 12 },
-  { id: 3, name: 'GST 5%', rate: 5 },
-  { id: 4, name: 'No Tax', rate: 0 },
-];
 
 const STATUS_COLORS = {
   draft: { bg: '#F3F4F6', color: '#4B5563' },
@@ -49,7 +45,7 @@ function LineItemsSection({ proforma, setProforma, proformaId, formatCurrency, n
       quantity: Number(item.quantity) || 1,
       unitPrice: Number(item.unitPrice || item.price) || 0,
       taxRate: Number(item.taxRate || 0),
-      discount: Number(item.discount) || 0,
+      ...discountFromSaved(item),
     })));
     setEditing(true);
   };
@@ -62,21 +58,18 @@ function LineItemsSection({ proforma, setProforma, proformaId, formatCurrency, n
     setEditItems(updated);
   };
 
-  const addEditItem = () => setEditItems([...editItems, { description: '', quantity: 1, unitPrice: 0, taxRate: 0, discount: 0 }]);
+  const addEditItem = () => setEditItems([...editItems, { description: '', quantity: 1, unitPrice: 0, taxRate: 0, ...NO_DISCOUNT }]);
   const removeEditItem = (idx) => { if (editItems.length <= 1) return; setEditItems(editItems.filter((_, i) => i !== idx)); };
 
   const calcEditItemTotal = (item) => {
-    const sub = Number(item.quantity) * Number(item.unitPrice);
-    const disc = Number(item.discount) || 0;
-    const taxable = sub - disc;
-    const taxAmt = taxable * (Number(item.taxRate) / 100);
-    return { subtotal: sub, discount: disc, taxAmount: taxAmt, total: taxable + taxAmt };
+    const line = lineAmounts(item);
+    return { subtotal: line.gross, discount: line.discount, taxAmount: line.tax, total: line.total };
   };
 
-  const editSubtotal = editItems.reduce((s, item) => s + calcEditItemTotal(item).subtotal, 0);
-  const editDiscount = editItems.reduce((s, item) => s + calcEditItemTotal(item).discount, 0);
-  const editTax = editItems.reduce((s, item) => s + calcEditItemTotal(item).taxAmount, 0);
-  const editTotal = editItems.reduce((s, item) => s + calcEditItemTotal(item).total, 0);
+  const editSubtotal = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).subtotal, 0));
+  const editDiscount = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).discount, 0));
+  const editTax = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).taxAmount, 0));
+  const editTotal = round2(editSubtotal - editDiscount + editTax);
 
   const saveEdit = async () => {
     setSaving(true);
@@ -104,15 +97,15 @@ function LineItemsSection({ proforma, setProforma, proformaId, formatCurrency, n
   const saveBtnStyle = { ...editBtnStyle, color: '#fff', background: 'var(--neutral-800)', border: '1px solid var(--neutral-800)' };
   const numCellStyle = { textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
   const indexStyle = { width: '24px', height: '24px', borderRadius: '6px', background: 'var(--neutral-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 500, color: 'var(--neutral-500)' };
-  const colHeaderStyle = { display: 'grid', gridTemplateColumns: '36px 1fr 80px 100px 80px 100px', gap: '0', padding: '8px 20px', background: 'var(--neutral-50)', borderBottom: '1px solid var(--neutral-100)', fontSize: '11px', fontWeight: 500, color: 'var(--neutral-500)', textTransform: 'uppercase', letterSpacing: '0.5px' };
-  const itemRowStyle = (isLast) => ({ display: 'grid', gridTemplateColumns: '36px 1fr 80px 100px 80px 100px', gap: '0', alignItems: 'center', padding: '12px 20px', borderBottom: isLast ? 'none' : '1px solid var(--neutral-50)', transition: 'background 0.1s', fontSize: '13px' });
+  const colHeaderStyle = { display: 'grid', gridTemplateColumns: '36px 1fr 60px 120px 100px 120px', gap: '0', padding: '8px 20px', background: 'var(--neutral-50)', borderBottom: '1px solid var(--neutral-100)', fontSize: '11px', fontWeight: 500, color: 'var(--neutral-500)', textTransform: 'uppercase', letterSpacing: '0.5px' };
+  const itemRowStyle = (isLast) => ({ display: 'grid', gridTemplateColumns: '36px 1fr 60px 120px 100px 120px', gap: '0', alignItems: 'center', padding: '12px 20px', borderBottom: isLast ? 'none' : '1px solid var(--neutral-50)', transition: 'background 0.1s', fontSize: '13px' });
   const totalsStyle = { padding: '16px 20px', borderTop: '1px solid var(--neutral-100)', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' };
   const totalRowStyle = (isGrand) => ({ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '24px', fontSize: isGrand ? '15px' : '13px', fontWeight: isGrand ? 700 : 400, color: isGrand ? 'var(--neutral-900)' : 'var(--neutral-600)', paddingTop: isGrand ? '8px' : 0, borderTop: isGrand ? '1px solid var(--neutral-200)' : 'none', width: '260px' });
   const totalLabelStyle = { minWidth: '100px', textAlign: 'right' };
   const totalValueStyle = { minWidth: '110px', textAlign: 'right', fontWeight: 500, fontVariantNumeric: 'tabular-nums' };
   const inputStyle = { width: '100%', padding: '6px 8px', border: '1px solid var(--neutral-200)', borderRadius: '6px', fontSize: '12px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: '#fff' };
-  const editItemRowStyle = (isLast) => ({ display: 'grid', gridTemplateColumns: '28px 1fr 70px 90px 70px 90px 32px', gap: '8px', alignItems: 'center', padding: '8px 20px', borderBottom: isLast ? 'none' : '1px solid var(--neutral-50)', fontSize: '13px' });
-  const editColHeaderStyle = { display: 'grid', gridTemplateColumns: '28px 1fr 70px 90px 70px 90px 32px', gap: '8px', padding: '8px 20px', background: 'var(--neutral-50)', borderBottom: '1px solid var(--neutral-100)', fontSize: '11px', fontWeight: 500, color: 'var(--neutral-500)', textTransform: 'uppercase', letterSpacing: '0.5px' };
+  const editItemRowStyle = (isLast) => ({ display: 'grid', gridTemplateColumns: '28px 1fr 60px 100px 88px 170px 110px 32px', gap: '8px', alignItems: 'center', padding: '8px 20px', borderBottom: isLast ? 'none' : '1px solid var(--neutral-50)', fontSize: '13px' });
+  const editColHeaderStyle = { display: 'grid', gridTemplateColumns: '28px 1fr 60px 100px 88px 170px 110px 32px', gap: '8px', padding: '8px 20px', background: 'var(--neutral-50)', borderBottom: '1px solid var(--neutral-100)', fontSize: '11px', fontWeight: 500, color: 'var(--neutral-500)', textTransform: 'uppercase', letterSpacing: '0.5px' };
   const rmBtnStyle = { width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', borderRadius: '6px', background: 'transparent', color: 'var(--neutral-400)', cursor: 'pointer', transition: 'all 0.15s' };
 
   if (!editing) {
@@ -137,7 +130,14 @@ function LineItemsSection({ proforma, setProforma, proformaId, formatCurrency, n
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--neutral-25, #fafafa)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
               <div><span style={indexStyle}>{idx + 1}</span></div>
-              <div style={{ fontWeight: 500, color: 'var(--neutral-800)' }}>{item.description || '—'}</div>
+              <div style={{ fontWeight: 500, color: 'var(--neutral-800)' }}>
+                {item.description || '—'}
+                {Number(item.discount) > 0 && (
+                  <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 400, color: 'var(--error-600)' }}>
+                    Discount {discountAsPercent(item.discount, Number(item.quantity) * Number(item.unitPrice || item.price))}% · −{formatCurrency(item.discount)}
+                  </span>
+                )}
+              </div>
               <div style={{ ...numCellStyle, color: 'var(--neutral-600)' }}>{item.quantity}</div>
               <div style={numCellStyle}>{formatCurrency(item.unitPrice || item.price)}</div>
               <div style={{ ...numCellStyle, color: 'var(--neutral-500)', fontSize: '12px' }}>{formatCurrency(item.tax)}</div>
@@ -147,8 +147,8 @@ function LineItemsSection({ proforma, setProforma, proformaId, formatCurrency, n
         </div>
         <div style={totalsStyle}>
           <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Subtotal</span><span style={totalValueStyle}>{formatCurrency(proforma.subtotal)}</span></div>
-          {proforma.tax > 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Tax</span><span style={totalValueStyle}>{formatCurrency(proforma.tax)}</span></div>}
           {proforma.discount > 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Discount</span><span style={{...totalValueStyle, color: 'var(--error-600)'}}>−{formatCurrency(proforma.discount)}</span></div>}
+          {proforma.tax > 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Tax</span><span style={totalValueStyle}>{formatCurrency(proforma.tax)}</span></div>}
           <div style={totalRowStyle(true)}><span style={totalLabelStyle}>Total</span><span style={totalValueStyle}>{formatCurrency(proforma.total)}</span></div>
         </div>
       </div>
@@ -165,7 +165,7 @@ function LineItemsSection({ proforma, setProforma, proformaId, formatCurrency, n
           <button style={saveBtnStyle} onClick={saveEdit} disabled={saving}>{saving ? 'Saving...' : <>{LI_ICONS.check} Save Changes</>}</button>
         </div>
       </div>
-      <div style={editColHeaderStyle}><div>#</div><div>Description</div><div>Qty</div><div>Rate</div><div>Tax %</div><div style={numCellStyle}>Amount</div><div></div></div>
+      <div style={editColHeaderStyle}><div>#</div><div>Description</div><div>Qty</div><div>Rate</div><div>Tax %</div><div>Discount % / ₹</div><div style={numCellStyle}>Amount</div><div></div></div>
       <div>
         {editItems.map((item, idx) => {
           const calc = calcEditItemTotal(item);
@@ -176,9 +176,11 @@ function LineItemsSection({ proforma, setProforma, proformaId, formatCurrency, n
               <div><input style={{ ...inputStyle, textAlign: 'right' }} type="number" min="1" step="1" value={item.quantity} onChange={e => updateEditItem(idx, 'quantity', Number(e.target.value))} /></div>
               <div><input style={{ ...inputStyle, textAlign: 'right' }} type="number" min="0" step="0.01" value={item.unitPrice} onChange={e => updateEditItem(idx, 'unitPrice', Number(e.target.value))} /></div>
               <div>
-                <select style={{ ...inputStyle, padding: '6px 4px' }} value={item.taxRate} onChange={e => updateEditItem(idx, 'taxRate', Number(e.target.value))}>
-                  {taxRateOptions.map(t => <option key={t.id} value={t.rate}>{t.name}</option>)}
-                </select>
+                <GstSelect style={{ ...inputStyle, padding: '6px 4px' }} value={item.taxRate} onChange={(rate) => updateEditItem(idx, 'taxRate', rate)} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr', gap: '4px' }}>
+                <LineDiscountInput field="percent" item={item} style={{ ...inputStyle, textAlign: 'right' }} onChange={(v) => setEditItems(editItems.map((it, i) => (i === idx ? { ...it, ...v } : it)))} />
+                <LineDiscountInput field="amount" item={item} style={{ ...inputStyle, textAlign: 'right' }} onChange={(v) => setEditItems(editItems.map((it, i) => (i === idx ? { ...it, ...v } : it)))} />
               </div>
               <div style={{ ...numCellStyle, fontWeight: 500, fontSize: '13px' }}>{formatCurrency(calc.total)}</div>
               <div>{editItems.length > 1 && (<button style={rmBtnStyle} onClick={() => removeEditItem(idx)} title="Remove item" onMouseEnter={e => { e.currentTarget.style.color = 'var(--error-600)'; e.currentTarget.style.background = 'var(--error-50)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--neutral-400)'; e.currentTarget.style.background = 'transparent'; }}>{LI_ICONS.trash}</button>)}</div>
@@ -333,7 +335,7 @@ ${stylesHTML}
   }, [proforma, companyInfo, quotationSettings]);
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: proforma?.currency || 'INR', maximumFractionDigits: 0 }).format(Number(amount) || 0);
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: proforma?.currency || 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(amount) || 0);
 
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 

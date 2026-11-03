@@ -1,4 +1,5 @@
 // Formatting and GST helpers shared by the invoice print layouts.
+import { round2 } from './lineAmounts';
 
 export const num = (v) => Number(v) || 0;
 export const fmt = (v) => num(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -55,9 +56,11 @@ export function gstLines(items, invoiceTax, sellerState, buyerState) {
   const inter = sellerState && buyerState && !intra;
   return [...byRate.entries()].flatMap(([rate, amount]) => {
     if (intra) {
+      // Half to the paisa, the rest to SGST, so the two add back up exactly
+      const cgst = round2(amount / 2);
       return [
-        { name: 'CGST', rate: rate / 2, amount: amount / 2 },
-        { name: 'SGST', rate: rate / 2, amount: amount / 2 },
+        { name: 'CGST', rate: rate / 2, amount: cgst },
+        { name: 'SGST', rate: rate / 2, amount: round2(amount - cgst) },
       ];
     }
     return [{ name: inter ? 'IGST' : 'GST', rate, amount }];

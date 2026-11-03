@@ -4,22 +4,9 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { createBill, updateBill, getBill, getVendors } from '../../utils/accountingApi';
 import ProductPicker from '../../components/accounting/ProductPicker';
+import { GstSelect, PriceWithGstInput } from '../../components/accounting/GstInputs';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
-
-const taxRates = [
-  { id: 1, name: 'GST 18%', rate: 18 },
-  { id: 2, name: 'GST 12%', rate: 12 },
-  { id: 3, name: 'GST 5%', rate: 5 },
-  { id: 4, name: 'No Tax', rate: 0 },
-];
-
-function findTaxId(rate) {
-  const match = taxRates.find(t => t.rate === Number(rate));
-  if (match) return match.id;
-  const closest = taxRates.reduce((best, t) => Math.abs(t.rate - rate) < Math.abs(best.rate - rate) ? t : best, taxRates[0]);
-  return closest.id;
-}
 
 function CreateBill() {
   const navigate = useNavigate();
@@ -33,7 +20,7 @@ function CreateBill() {
   const vendorRef = useRef(null);
 
   const [form, setForm] = useState({ vendor: '', vendorId: null, date: new Date().toISOString().split('T')[0], dueDate: '', notes: '' });
-  const [items, setItems] = useState([{ description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxId: 4 }]);
+  const [items, setItems] = useState([{ description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxRate: 0 }]);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +64,7 @@ function CreateBill() {
               hsnCode: item.hsnCode || item.hsn_code || '',
               quantity: Number(item.quantity) || 1,
               unitPrice: Number(item.unitPrice || item.unit_price || item.price) || 0,
-              taxId: findTaxId(Number(item.taxRate || item.tax_rate) || 0),
+              taxRate: Number(item.taxRate || item.tax_rate) || 0,
             })));
           }
         }
@@ -109,7 +96,7 @@ function CreateBill() {
     setShowVendorDropdown(true);
   };
 
-  const addItem = () => setItems([...items, { description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxId: 4 }]);
+  const addItem = () => setItems([...items, { description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxRate: 0 }]);
   const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
   const updateItem = (idx, field, value) => { const u = [...items]; u[idx] = { ...u[idx], [field]: value }; setItems(u); };
 
@@ -121,15 +108,14 @@ function CreateBill() {
       description: product.name,
       hsnCode: product.hsnCode || product.hsn_code || '',
       unitPrice: Number(product.unitPrice || product.unit_price) || 0,
-      taxId: findTaxId(Number(product.taxRate || product.tax_rate) || 0),
+      taxRate: Number(product.taxRate || product.tax_rate) || 0,
     };
     setItems(u);
   };
 
   const calcItem = (item) => {
     const sub = item.quantity * item.unitPrice;
-    const tax = taxRates.find(t => t.id === Number(item.taxId));
-    const taxAmt = sub * ((tax?.rate || 0) / 100);
+    const taxAmt = sub * ((Number(item.taxRate) || 0) / 100);
     return { sub, taxAmt, total: sub + taxAmt };
   };
 
@@ -144,14 +130,13 @@ function CreateBill() {
     setSaving(true);
     try {
       const preparedItems = items.map(item => {
-        const tax = taxRates.find(t => t.id === Number(item.taxId));
         const calc = calcItem(item);
         return {
           description: item.description,
           hsnCode: item.hsnCode || null,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          taxRate: tax?.rate || 0,
+          taxRate: Number(item.taxRate) || 0,
           taxAmount: calc.taxAmt,
           total: calc.total,
         };
@@ -234,8 +219,10 @@ function CreateBill() {
                       {item.hsnCode && <span style={{fontSize:'11px',color:'var(--neutral-500)',display:'block',marginTop:'2px'}}>HSN: {item.hsnCode}</span>}
                     </td>
                     <td><input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(idx,'quantity',Number(e.target.value))} /></td>
-                    <td><input type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx,'unitPrice',Number(e.target.value))} /></td>
-                    <td><select value={item.taxId} onChange={(e) => updateItem(idx,'taxId',e.target.value)}>{taxRates.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></td>
+                    <td><input type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx,'unitPrice',Number(e.target.value))} />
+                        <label className="acc-price-gst"><span>With GST</span><PriceWithGstInput price={item.unitPrice} rate={item.taxRate} onChange={(price) => updateItem(idx, 'unitPrice', price)} /></label>
+                      </td>
+                    <td><GstSelect value={item.taxRate} onChange={(rate) => updateItem(idx, 'taxRate', rate)} /></td>
                     <td style={{textAlign:'right',fontWeight:500}}>{formatCurrency(calcItem(item).total)}</td>
                     <td>{items.length > 1 && <button type="button" onClick={() => removeItem(idx)} style={{width:'28px',height:'28px',borderRadius:'6px',border:'none',background:'var(--error-50)',color:'var(--error-600)',cursor:'pointer'}}>✕</button>}</td>
                   </tr>

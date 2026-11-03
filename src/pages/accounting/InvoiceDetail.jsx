@@ -13,14 +13,10 @@ import useSnackbar from '../../utils/useSnackbar';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
 import InvoicePrintView from '../../components/accounting/InvoicePrintView';
+import LineDiscountInput from '../../components/accounting/LineDiscountInput';
+import { GstSelect } from '../../components/accounting/GstInputs';
+import { NO_DISCOUNT, discountAsPercent, discountFromSaved, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
 
-
-const taxRateOptions = [
-  { id: 1, name: 'GST 18%', rate: 18 },
-  { id: 2, name: 'GST 12%', rate: 12 },
-  { id: 3, name: 'GST 5%', rate: 5 },
-  { id: 4, name: 'No Tax', rate: 0 },
-];
 
 // Inline SVG micro-icons for line items section
 const LI_ICONS = {
@@ -75,7 +71,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
       quantity: Number(item.quantity) || 1,
       unitPrice: Number(item.unitPrice || item.price) || 0,
       taxRate: Number(item.taxRate || 0),
-      discount: Number(item.discount) || 0,
+      ...discountFromSaved(item),
     })));
     setEditing(true);
   };
@@ -92,7 +88,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
   };
 
   const addEditItem = () => {
-    setEditItems([...editItems, { description: '', quantity: 1, unitPrice: 0, taxRate: 0, discount: 0 }]);
+    setEditItems([...editItems, { description: '', quantity: 1, unitPrice: 0, taxRate: 0, ...NO_DISCOUNT }]);
   };
 
   const removeEditItem = (idx) => {
@@ -101,17 +97,14 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
   };
 
   const calcEditItemTotal = (item) => {
-    const sub = Number(item.quantity) * Number(item.unitPrice);
-    const disc = Number(item.discount) || 0;
-    const taxable = sub - disc;
-    const taxAmt = taxable * (Number(item.taxRate) / 100);
-    return { subtotal: sub, discount: disc, taxAmount: taxAmt, total: taxable + taxAmt };
+    const line = lineAmounts(item);
+    return { subtotal: line.gross, discount: line.discount, taxAmount: line.tax, total: line.total };
   };
 
-  const editSubtotal = editItems.reduce((s, item) => s + calcEditItemTotal(item).subtotal, 0);
-  const editDiscount = editItems.reduce((s, item) => s + calcEditItemTotal(item).discount, 0);
-  const editTax = editItems.reduce((s, item) => s + calcEditItemTotal(item).taxAmount, 0);
-  const editTotal = editItems.reduce((s, item) => s + calcEditItemTotal(item).total, 0);
+  const editSubtotal = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).subtotal, 0));
+  const editDiscount = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).discount, 0));
+  const editTax = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).taxAmount, 0));
+  const editTotal = round2(editSubtotal - editDiscount + editTax);
 
   const saveEdit = async () => {
     setSaving(true);
@@ -229,7 +222,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
 
   const itemRowStyle = (isLast) => ({
     display: 'grid',
-    gridTemplateColumns: '36px 1fr 80px 100px 80px 100px',
+    gridTemplateColumns: '36px 1fr 60px 120px 100px 120px',
     gap: '0',
     alignItems: 'center',
     padding: '12px 20px',
@@ -240,7 +233,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
 
   const colHeaderStyle = {
     display: 'grid',
-    gridTemplateColumns: '36px 1fr 80px 100px 80px 100px',
+    gridTemplateColumns: '36px 1fr 60px 120px 100px 120px',
     gap: '0',
     padding: '8px 20px',
     background: 'var(--neutral-50)',
@@ -319,7 +312,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
 
   const editItemRowStyle = (isLast) => ({
     display: 'grid',
-    gridTemplateColumns: '28px 1fr 70px 90px 70px 90px 32px',
+    gridTemplateColumns: '28px 1fr 60px 100px 88px 170px 110px 32px',
     gap: '8px',
     alignItems: 'center',
     padding: '8px 20px',
@@ -329,7 +322,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
 
   const editColHeaderStyle = {
     display: 'grid',
-    gridTemplateColumns: '28px 1fr 70px 90px 70px 90px 32px',
+    gridTemplateColumns: '28px 1fr 60px 100px 88px 170px 110px 32px',
     gap: '8px',
     padding: '8px 20px',
     background: 'var(--neutral-50)',
@@ -397,7 +390,14 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--neutral-25, #fafafa)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}>
               <div><span style={indexStyle}>{idx + 1}</span></div>
-              <div style={{ fontWeight: 500, color: 'var(--neutral-800)' }}>{item.description || '—'}</div>
+              <div style={{ fontWeight: 500, color: 'var(--neutral-800)' }}>
+                {item.description || '—'}
+                {Number(item.discount) > 0 && (
+                  <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 400, color: 'var(--error-600)' }}>
+                    Discount {discountAsPercent(item.discount, Number(item.quantity) * Number(item.unitPrice || item.price))}% · −{formatCurrency(item.discount)}
+                  </span>
+                )}
+              </div>
               <div style={{ ...numCellStyle, color: 'var(--neutral-600)' }}>{item.quantity}</div>
               <div style={numCellStyle}>{formatCurrency(item.unitPrice || item.price)}</div>
               <div style={{ ...numCellStyle, color: 'var(--neutral-500)', fontSize: '12px' }}>{formatCurrency(item.tax)}</div>
@@ -412,16 +412,16 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
             <span style={totalLabelStyle}>Subtotal</span>
             <span style={totalValueStyle}>{formatCurrency(invoice.subtotal)}</span>
           </div>
-          {invoice.tax > 0 && (
-            <div style={totalRowStyle(false)}>
-              <span style={totalLabelStyle}>Tax</span>
-              <span style={totalValueStyle}>{formatCurrency(invoice.tax)}</span>
-            </div>
-          )}
           {invoice.discount > 0 && (
             <div style={totalRowStyle(false)}>
               <span style={{...totalLabelStyle}}>Discount</span>
               <span style={{...totalValueStyle, color: 'var(--error-600)'}}>−{formatCurrency(invoice.discount)}</span>
+            </div>
+          )}
+          {invoice.tax > 0 && (
+            <div style={totalRowStyle(false)}>
+              <span style={totalLabelStyle}>Tax</span>
+              <span style={totalValueStyle}>{formatCurrency(invoice.tax)}</span>
             </div>
           )}
           <div style={totalRowStyle(true)}>
@@ -460,6 +460,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
         <div>Qty</div>
         <div>Rate</div>
         <div>Tax %</div>
+        <div>Discount % / ₹</div>
         <div style={numCellStyle}>Amount</div>
         <div></div>
       </div>
@@ -484,10 +485,11 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
                   value={item.unitPrice} onChange={e => updateEditItem(idx, 'unitPrice', Number(e.target.value))} />
               </div>
               <div>
-                <select style={{ ...inputStyle, padding: '6px 4px' }}
-                  value={item.taxRate} onChange={e => updateEditItem(idx, 'taxRate', Number(e.target.value))}>
-                  {taxRateOptions.map(t => <option key={t.id} value={t.rate}>{t.name}</option>)}
-                </select>
+                <GstSelect style={{ ...inputStyle, padding: '6px 4px' }} value={item.taxRate} onChange={(rate) => updateEditItem(idx, 'taxRate', rate)} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr', gap: '4px' }}>
+                <LineDiscountInput field="percent" item={item} style={{ ...inputStyle, textAlign: 'right' }} onChange={(v) => setEditItems(editItems.map((it, i) => (i === idx ? { ...it, ...v } : it)))} />
+                <LineDiscountInput field="amount" item={item} style={{ ...inputStyle, textAlign: 'right' }} onChange={(v) => setEditItems(editItems.map((it, i) => (i === idx ? { ...it, ...v } : it)))} />
               </div>
               <div style={{ ...numCellStyle, fontWeight: 500, fontSize: '13px' }}>
                 {formatCurrency(calc.total)}
@@ -712,7 +714,7 @@ ${stylesHTML}
   }, [handlePrint]);
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: invoice?.currency || 'INR', maximumFractionDigits: 0 }).format(Number(amount) || 0);
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: invoice?.currency || 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(amount) || 0);
 
   // A payment or credit note was saved: the server sends back the updated invoice
   const handleSettled = (raw, message) => {

@@ -4,24 +4,12 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { createInvoice, updateInvoice, getInvoice, getAccountingCustomers, getInvoiceTemplateSettings } from '../../utils/accountingApi';
 import ProductPicker from '../../components/accounting/ProductPicker';
+import { GstSelect, PriceWithGstInput } from '../../components/accounting/GstInputs';
+import LineDiscountInput from '../../components/accounting/LineDiscountInput';
+import { NO_DISCOUNT, discountFromSaved, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
 import { resolveInvoiceLayout } from '../../components/accounting/invoiceTemplates';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
-
-const taxRates = [
-  { id: 1, name: 'GST 18%', rate: 18, type: 'IGST' },
-  { id: 2, name: 'GST 12%', rate: 12, type: 'IGST' },
-  { id: 3, name: 'GST 5%', rate: 5, type: 'IGST' },
-  { id: 4, name: 'No Tax', rate: 0, type: 'none' },
-];
-
-function findTaxId(rate) {
-  const match = taxRates.find(t => t.rate === Number(rate));
-  if (match) return match.id;
-  // Fall back to the closest predefined slab (products can carry any GST rate)
-  const closest = taxRates.reduce((best, t) => Math.abs(t.rate - rate) < Math.abs(best.rate - rate) ? t : best, taxRates[0]);
-  return closest.id;
-}
 
 function CreateInvoice() {
   const navigate = useNavigate();
@@ -41,7 +29,7 @@ function CreateInvoice() {
     shipTo: '', extraFields: {},
   });
   const [items, setItems] = useState([
-    { description: '', hsnCode: '', quantity: 1, unit: '', unitPrice: 0, taxId: 4, discount: 0 },
+    { description: '', hsnCode: '', quantity: 1, unit: '', unitPrice: 0, taxRate: 0, ...NO_DISCOUNT },
   ]);
   // The print template decides which extra inputs this form offers
   const [printLayout, setPrintLayout] = useState(() => resolveInvoiceLayout('default'));
@@ -111,8 +99,8 @@ function CreateInvoice() {
               quantity: Number(item.quantity) || 1,
               unit: item.unit || '',
               unitPrice: Number(item.unitPrice || item.unit_price || item.price) || 0,
-              taxId: findTaxId(Number(item.taxRate || item.tax_rate) || 0),
-              discount: Number(item.discountPercent || item.discount_percent || 0),
+              taxRate: Number(item.taxRate || item.tax_rate) || 0,
+              ...discountFromSaved(item),
             })));
           }
 
@@ -152,7 +140,7 @@ function CreateInvoice() {
     setShowCustomerDropdown(true);
   };
 
-  const addItem = () => setItems([...items, { description: '', hsnCode: '', quantity: 1, unit: '', unitPrice: 0, taxId: 4, discount: 0 }]);
+  const addItem = () => setItems([...items, { description: '', hsnCode: '', quantity: 1, unit: '', unitPrice: 0, taxRate: 0, ...NO_DISCOUNT }]);
   const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
   const updateItem = (idx, field, value) => {
     const updated = [...items];
@@ -170,24 +158,22 @@ function CreateInvoice() {
       hsnCode: product.hsnCode || product.hsn_code || '',
       unit: product.unit || updated[idx].unit || '',
       unitPrice: Number(product.unitPrice || product.unit_price) || 0,
-      taxId: findTaxId(Number(product.taxRate || product.tax_rate) || 0),
+      taxRate: Number(product.taxRate || product.tax_rate) || 0,
     };
     setItems(updated);
   };
 
   const calculateItemTotal = (item) => {
-    const subtotal = item.quantity * item.unitPrice;
-    const discountAmount = subtotal * (item.discount / 100);
-    const taxableAmount = subtotal - discountAmount;
-    const tax = taxRates.find(t => t.id === Number(item.taxId));
-    const taxAmount = taxableAmount * ((tax?.rate || 0) / 100);
-    return { subtotal, discountAmount, taxableAmount, taxAmount, total: taxableAmount + taxAmount };
+    const line = lineAmounts(item);
+    return { subtotal: line.gross, discountAmount: line.discount, taxableAmount: line.net, taxAmount: line.tax, total: line.total };
   };
 
-  const subtotal = items.reduce((sum, item) => sum + calculateItemTotal(item).subtotal, 0);
-  const totalDiscount = items.reduce((sum, item) => sum + calculateItemTotal(item).discountAmount, 0);
-  const totalTax = items.reduce((sum, item) => sum + calculateItemTotal(item).taxAmount, 0);
-  const grandTotal = items.reduce((sum, item) => sum + calculateItemTotal(item).total, 0);
+  const updateItemDiscount = (idx, patchValues) => setItems(items.map((it, i) => (i === idx ? { ...it, ...patchValues } : it)));
+
+  const subtotal = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).subtotal, 0));
+  const totalDiscount = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).discountAmount, 0));
+  const totalTax = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).taxAmount, 0));
+  const grandTotal = round2(subtotal - totalDiscount + totalTax);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -195,7 +181,6 @@ function CreateInvoice() {
     try {
       // Prepare items with tax rate for backend
       const preparedItems = items.map(item => {
-        const tax = taxRates.find(t => t.id === Number(item.taxId));
         const calc = calculateItemTotal(item);
         return {
           description: item.description,
@@ -205,7 +190,7 @@ function CreateInvoice() {
           unit: item.unit || null,
           unitPrice: item.unitPrice,
           discount: calc.discountAmount,
-          taxRate: tax?.rate || 0,
+          taxRate: Number(item.taxRate) || 0,
           taxAmount: calc.taxAmount,
           total: calc.total,
         };
@@ -353,12 +338,13 @@ function CreateInvoice() {
             <table className="acc-line-items">
               <thead>
                 <tr>
-                  <th style={{width:'35%'}}>Description</th>
-                  <th style={{width:'10%'}}>Qty</th>
+                  <th style={{width:'28%'}}>Description</th>
+                  <th style={{width:'7%'}}>Qty</th>
                   {printLayout.columns.uom && <th style={{width:'8%'}}>Unit</th>}
-                  <th style={{width:'15%'}}>Price</th>
-                  <th style={{width:'15%'}}>Tax</th>
-                  <th style={{width:'10%'}}>Discount %</th>
+                  <th style={{width:'13%'}}>Price</th>
+                  <th style={{width:'12%'}}>Tax</th>
+                  <th style={{width:'8%'}}>Disc. %</th>
+                  <th style={{width:'12%'}}>Disc. ₹</th>
                   <th style={{width:'12%',textAlign:'right'}}>Total</th>
                   <th style={{width:'3%'}}></th>
                 </tr>
@@ -388,13 +374,14 @@ function CreateInvoice() {
                         <td><input type="text" disabled={invoiceLocked} maxLength={20} value={item.unit} placeholder="NOS" aria-label="Unit"
                           onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} /></td>
                       )}
-                      <td><input type="number" disabled={invoiceLocked} min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', Number(e.target.value))} /></td>
-                      <td>
-                        <select disabled={invoiceLocked} value={item.taxId} onChange={(e) => updateItem(idx, 'taxId', e.target.value)}>
-                          {taxRates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                        </select>
+                      <td><input type="number" disabled={invoiceLocked} min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', Number(e.target.value))} />
+                        <label className="acc-price-gst"><span>With GST</span><PriceWithGstInput price={item.unitPrice} rate={item.taxRate} disabled={invoiceLocked} onChange={(price) => updateItem(idx, 'unitPrice', price)} /></label>
                       </td>
-                      <td><input type="number" disabled={invoiceLocked} min="0" max="100" value={item.discount} onChange={(e) => updateItem(idx, 'discount', Number(e.target.value))} /></td>
+                      <td>
+                        <GstSelect disabled={invoiceLocked} value={item.taxRate} onChange={(rate) => updateItem(idx, 'taxRate', rate)} />
+                      </td>
+                      <td><LineDiscountInput field="percent" item={item} disabled={invoiceLocked} onChange={(v) => updateItemDiscount(idx, v)} /></td>
+                      <td><LineDiscountInput field="amount" item={item} disabled={invoiceLocked} onChange={(v) => updateItemDiscount(idx, v)} /></td>
                       <td style={{textAlign:'right',fontWeight:500}}>{formatCurrency(calc.total)}</td>
                       <td>
                         {!invoiceLocked && items.length > 1 && (

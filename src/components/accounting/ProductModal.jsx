@@ -9,12 +9,13 @@ import {
 import { API_ORIGIN } from '../../utils/api';
 import { createProduct, deleteProductImage, updateProduct, uploadProductImage } from '../../utils/accountingApi';
 import { invalidateProductsCache } from './ProductPicker';
+import { PriceWithGstInput } from './GstInputs';
+import { STANDARD_GST_RATES, round2 } from './lineAmounts';
 import '../../styles/Accounting.css';
 import '../../styles/Products.css';
 
 const MAX_IMAGE_MB = 4;
 const UNITS = ['NOS', 'PCS', 'SET', 'BOX', 'PAIR', 'KG', 'LTR', 'MTR', 'HRS', 'VISIT'];
-const GST_RATES = [0, 5, 12, 18, 28];
 
 const toForm = (p) => ({
   name: p?.name || '',
@@ -104,7 +105,7 @@ function ProductModal({ product, categories = [], onSaved, onClose }) {
   const cost = form.purchasePrice === '' ? null : Number(form.purchasePrice);
   const margin = cost != null && price > 0 ? ((price - cost) / price) * 100 : null;
   const features = form.features.split('\n').map((l) => l.trim()).filter(Boolean);
-  const priceWithGst = price * (1 + (Number(form.taxRate) || 0) / 100);
+  const priceWithGst = round2(price * (1 + (Number(form.taxRate) || 0) / 100));
   const stockNow = product ? Number(product.stockQuantity || 0) : Number(form.openingStock || 0);
 
   const handleSubmit = async (e) => {
@@ -232,8 +233,11 @@ function ProductModal({ product, categories = [], onSaved, onClose }) {
               </Section>
 
               <Section icon={IndianRupee} title="Pricing & tax" hint="Purchase price gives you margin and stock value">
-                <Field id="p-price" label="Selling price" required>
+                <Field id="p-price" label="Selling price before GST" required>
                   <div className="pm-adorn"><span>₹</span><input id="p-price" type="number" min="0" step="0.01" value={form.unitPrice} onChange={set('unitPrice')} required placeholder="0.00" /></div>
+                </Field>
+                <Field id="p-price-gst" label="Selling price with GST" hint="Type either price; the other follows">
+                  <div className="pm-adorn"><span>₹</span><PriceWithGstInput id="p-price-gst" price={form.unitPrice} rate={form.taxRate} onChange={(unitPrice) => setForm({ ...form, unitPrice })} /></div>
                 </Field>
                 <Field id="p-cost" label="Purchase price">
                   <div className="pm-adorn"><span>₹</span><input id="p-cost" type="number" min="0" step="0.01" value={form.purchasePrice} onChange={set('purchasePrice')} placeholder="0.00" /></div>
@@ -241,7 +245,7 @@ function ProductModal({ product, categories = [], onSaved, onClose }) {
                 <Field id="p-gst" label="GST rate">
                   <div className="pm-adorn is-suffix"><input id="p-gst" type="number" min="0" max="100" step="0.01" value={form.taxRate} onChange={set('taxRate')} /><span>%</span></div>
                   <div className="pm-quick" role="group" aria-label="Common GST rates">
-                    {GST_RATES.map((r) => (
+                    {STANDARD_GST_RATES.map((r) => (
                       <button type="button" key={r} className={Number(form.taxRate) === r ? 'is-on' : ''} onClick={() => setForm({ ...form, taxRate: r })}>{r}%</button>
                     ))}
                   </div>

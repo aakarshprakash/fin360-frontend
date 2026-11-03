@@ -54,7 +54,7 @@ function QuotationPageView({ quotation, company, settings: qs }) {
     const description = qs.showFeatures ? (p.description || '').trim() : '';
     const image = qs.showProductImages && p.image;
     const hasMore = !!(image || description || features.length);
-    const lineAmount = num(item.quantity) * num(item.unitPrice) - num(item.discount);
+    const lineAmount = num(item.quantity) * num(item.unitPrice);
     const rows = [{
       key: `item-${key}`,
       group: 'items',

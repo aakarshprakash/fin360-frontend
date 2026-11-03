@@ -4,15 +4,11 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { createQuotation, updateQuotation, getQuotation, getAccountingCustomers } from '../../utils/accountingApi';
 import ProductPicker from '../../components/accounting/ProductPicker';
+import { GstSelect, PriceWithGstInput } from '../../components/accounting/GstInputs';
+import LineDiscountInput from '../../components/accounting/LineDiscountInput';
+import { NO_DISCOUNT, discountFromSaved, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
-
-const taxRates = [
-  { id: 1, name: 'GST 18%', rate: 18, type: 'IGST' },
-  { id: 2, name: 'GST 12%', rate: 12, type: 'IGST' },
-  { id: 3, name: 'GST 5%', rate: 5, type: 'IGST' },
-  { id: 4, name: 'No Tax', rate: 0, type: 'none' },
-];
 
 function getDefaultValidUntil() {
   const d = new Date();
@@ -37,7 +33,7 @@ function CreateQuotation() {
     notes: '', termsAndConditions: '', branch: '', useSignature: true,
   });
   const [items, setItems] = useState([
-    { description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxId: 4, discount: 0 },
+    { description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxRate: 0, ...NO_DISCOUNT },
   ]);
 
   // Fetch customers list
@@ -90,8 +86,8 @@ function CreateQuotation() {
               productId: item.productId || null,
               quantity: Number(item.quantity) || 1,
               unitPrice: Number(item.unitPrice || item.unit_price || item.price) || 0,
-              taxId: findTaxId(Number(item.taxRate || item.tax_rate) || 0),
-              discount: Number(item.discountPercent || item.discount_percent || 0),
+              taxRate: Number(item.taxRate || item.tax_rate) || 0,
+              ...discountFromSaved(item),
             })));
           }
         }
@@ -100,14 +96,6 @@ function CreateQuotation() {
     };
     fetchQuotation();
   }, [id, isEdit]);
-
-  function findTaxId(rate) {
-    const exact = taxRates.find(t => t.rate === rate);
-    if (exact) return exact.id;
-    // Fall back to the closest predefined slab (products can carry any GST rate)
-    const closest = taxRates.reduce((best, t) => Math.abs(t.rate - rate) < Math.abs(best.rate - rate) ? t : best, taxRates[0]);
-    return closest.id;
-  }
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -136,7 +124,7 @@ function CreateQuotation() {
     setShowCustomerDropdown(true);
   };
 
-  const addItem = () => setItems([...items, { description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxId: 4, discount: 0 }]);
+  const addItem = () => setItems([...items, { description: '', hsnCode: '', quantity: 1, unitPrice: 0, taxRate: 0, ...NO_DISCOUNT }]);
   const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
   const updateItem = (idx, field, value) => {
     const updated = [...items];
@@ -153,31 +141,28 @@ function CreateQuotation() {
       productId: product.id,
       hsnCode: product.hsnCode || product.hsn_code || '',
       unitPrice: Number(product.unitPrice || product.unit_price) || 0,
-      taxId: findTaxId(Number(product.taxRate || product.tax_rate) || 0),
+      taxRate: Number(product.taxRate || product.tax_rate) || 0,
     };
     setItems(updated);
   };
 
   const calculateItemTotal = (item) => {
-    const subtotal = item.quantity * item.unitPrice;
-    const discountAmount = subtotal * (item.discount / 100);
-    const taxableAmount = subtotal - discountAmount;
-    const tax = taxRates.find(t => t.id === Number(item.taxId));
-    const taxAmount = taxableAmount * ((tax?.rate || 0) / 100);
-    return { subtotal, discountAmount, taxableAmount, taxAmount, total: taxableAmount + taxAmount };
+    const line = lineAmounts(item);
+    return { subtotal: line.gross, discountAmount: line.discount, taxableAmount: line.net, taxAmount: line.tax, total: line.total };
   };
 
-  const subtotal = items.reduce((sum, item) => sum + calculateItemTotal(item).subtotal, 0);
-  const totalDiscount = items.reduce((sum, item) => sum + calculateItemTotal(item).discountAmount, 0);
-  const totalTax = items.reduce((sum, item) => sum + calculateItemTotal(item).taxAmount, 0);
-  const grandTotal = items.reduce((sum, item) => sum + calculateItemTotal(item).total, 0);
+  const updateItemDiscount = (idx, patchValues) => setItems(items.map((it, i) => (i === idx ? { ...it, ...patchValues } : it)));
+
+  const subtotal = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).subtotal, 0));
+  const totalDiscount = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).discountAmount, 0));
+  const totalTax = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).taxAmount, 0));
+  const grandTotal = round2(subtotal - totalDiscount + totalTax);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
       const preparedItems = items.map(item => {
-        const tax = taxRates.find(t => t.id === Number(item.taxId));
         const calc = calculateItemTotal(item);
         return {
           description: item.description,
@@ -186,7 +171,7 @@ function CreateQuotation() {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           discount: calc.discountAmount,
-          taxRate: tax?.rate || 0,
+          taxRate: Number(item.taxRate) || 0,
           taxAmount: calc.taxAmount,
           total: calc.total,
         };
@@ -322,11 +307,12 @@ function CreateQuotation() {
             <table className="acc-line-items">
               <thead>
                 <tr>
-                  <th style={{width:'35%'}}>Description</th>
-                  <th style={{width:'10%'}}>Qty</th>
-                  <th style={{width:'15%'}}>Price</th>
-                  <th style={{width:'15%'}}>Tax</th>
-                  <th style={{width:'10%'}}>Discount %</th>
+                  <th style={{width:'28%'}}>Description</th>
+                  <th style={{width:'7%'}}>Qty</th>
+                  <th style={{width:'13%'}}>Price</th>
+                  <th style={{width:'12%'}}>Tax</th>
+                  <th style={{width:'8%'}}>Disc. %</th>
+                  <th style={{width:'12%'}}>Disc. ₹</th>
                   <th style={{width:'12%',textAlign:'right'}}>Total</th>
                   <th style={{width:'3%'}}></th>
                 </tr>
@@ -346,13 +332,14 @@ function CreateQuotation() {
                         {item.hsnCode && <span style={{fontSize:'11px',color:'var(--neutral-500)',display:'block',marginTop:'2px'}}>HSN: {item.hsnCode}</span>}
                       </td>
                       <td><input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', Number(e.target.value))} /></td>
-                      <td><input type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', Number(e.target.value))} /></td>
-                      <td>
-                        <select value={item.taxId} onChange={(e) => updateItem(idx, 'taxId', e.target.value)}>
-                          {taxRates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                        </select>
+                      <td><input type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', Number(e.target.value))} />
+                        <label className="acc-price-gst"><span>With GST</span><PriceWithGstInput price={item.unitPrice} rate={item.taxRate} onChange={(price) => updateItem(idx, 'unitPrice', price)} /></label>
                       </td>
-                      <td><input type="number" min="0" max="100" value={item.discount} onChange={(e) => updateItem(idx, 'discount', Number(e.target.value))} /></td>
+                      <td>
+                        <GstSelect value={item.taxRate} onChange={(rate) => updateItem(idx, 'taxRate', rate)} />
+                      </td>
+                      <td><LineDiscountInput field="percent" item={item} onChange={(v) => updateItemDiscount(idx, v)} /></td>
+                      <td><LineDiscountInput field="amount" item={item} onChange={(v) => updateItemDiscount(idx, v)} /></td>
                       <td style={{textAlign:'right',fontWeight:500}}>{formatCurrency(calc.total)}</td>
                       <td>
                         {items.length > 1 && (
