@@ -8,7 +8,7 @@ import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
 import LineDiscountInput from '../../components/accounting/LineDiscountInput';
 import { GstSelect } from '../../components/accounting/GstInputs';
-import { NO_DISCOUNT, discountAsPercent, discountFromSaved, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
+import { NO_DISCOUNT, discountAsPercent, discountFromSaved, documentTotals, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
 import ProformaInvoicePrintView from '../../components/accounting/ProformaInvoicePrintView';
 
 const STATUS_COLORS = {
@@ -69,25 +69,26 @@ function LineItemsSection({ proforma, setProforma, proformaId, formatCurrency, n
   const editSubtotal = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).subtotal, 0));
   const editDiscount = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).discount, 0));
   const editTax = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).taxAmount, 0));
-  const editTotal = round2(editSubtotal - editDiscount + editTax);
+  const editTotal = documentTotals(editItems, (Number(proforma.roundOff) || 0) !== 0).total;
 
   const saveEdit = async () => {
     setSaving(true);
     try {
       const preparedItems = editItems.map(item => {
         const calc = calcEditItemTotal(item);
-        return { description: item.description, quantity: item.quantity, unitPrice: item.unitPrice, discount: calc.discount, taxRate: item.taxRate, taxAmount: calc.taxAmount, total: calc.total };
+        return { description: item.description, hsnCode: item.hsnCode || null, productId: item.productId || null, quantity: item.quantity, unitPrice: item.unitPrice, discount: calc.discount, taxRate: item.taxRate, taxAmount: calc.taxAmount, total: calc.total };
       });
       const payload = { items: preparedItems, subtotal: editSubtotal, tax: editTax, discount: editDiscount, total: editTotal };
       const response = await updateProformaInvoice(proformaId, payload);
       const raw = response.data?.data || response.data;
       if (raw?.id) { setProforma(normalizeProforma(raw)); }
       else { setProforma({ ...proforma, items: preparedItems.map(it => ({ ...it, price: it.unitPrice, tax: it.taxAmount })), subtotal: editSubtotal, tax: editTax, discount: editDiscount, total: editTotal }); }
-    } catch {
-      const preparedItems = editItems.map(item => { const calc = calcEditItemTotal(item); return { description: item.description, quantity: item.quantity, unitPrice: item.unitPrice, price: item.unitPrice, discount: calc.discount, taxRate: item.taxRate, taxAmount: calc.taxAmount, tax: calc.taxAmount, total: calc.total }; });
-      setProforma({ ...proforma, items: preparedItems, subtotal: editSubtotal, tax: editTax, discount: editDiscount, total: editTotal });
+      setEditing(false); setEditItems([]);
+    } catch (err) {
+      // Stay in edit mode: nothing was saved
+      alert(err.response?.data?.message || 'Could not save line items. Please try again.');
     }
-    setEditing(false); setEditItems([]); setSaving(false);
+    setSaving(false);
   };
 
   const sectionStyle = { marginBottom: '24px', background: '#fff', borderRadius: '12px', border: '1px solid var(--neutral-200)', overflow: 'hidden' };
@@ -149,6 +150,7 @@ function LineItemsSection({ proforma, setProforma, proformaId, formatCurrency, n
           <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Subtotal</span><span style={totalValueStyle}>{formatCurrency(proforma.subtotal)}</span></div>
           {proforma.discount > 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Discount</span><span style={{...totalValueStyle, color: 'var(--error-600)'}}>−{formatCurrency(proforma.discount)}</span></div>}
           {proforma.tax > 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Tax</span><span style={totalValueStyle}>{formatCurrency(proforma.tax)}</span></div>}
+          {(Number(proforma.roundOff) || 0) !== 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Round off</span><span style={totalValueStyle}>{Number(proforma.roundOff) < 0 ? '−' : ''}{formatCurrency(Math.abs(Number(proforma.roundOff)))}</span></div>}
           <div style={totalRowStyle(true)}><span style={totalLabelStyle}>Total</span><span style={totalValueStyle}>{formatCurrency(proforma.total)}</span></div>
         </div>
       </div>
@@ -341,8 +343,12 @@ ${stylesHTML}
 
   const handleStatusChange = async (newStatus) => {
     setActionLoading(true);
-    try { await updateProformaInvoiceStatus(id, newStatus); } catch { /* fallback */ }
-    setProforma({ ...proforma, status: newStatus });
+    try {
+      await updateProformaInvoiceStatus(id, newStatus);
+      setProforma({ ...proforma, status: newStatus });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not update the status. Please try again.');
+    }
     setActionLoading(false);
   };
 
@@ -354,16 +360,20 @@ ${stylesHTML}
       const inv = res.data?.data?.invoice || res.data?.invoice || res.data?.data || res.data;
       if (inv?.id) { navigate(`/invoices/${inv.id}`); }
       else { setProforma({ ...proforma, status: 'converted' }); alert('Converted to invoice successfully.'); }
-    } catch {
-      alert('Convert to invoice API not available yet.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not convert this proforma invoice. Please try again.');
     }
     setActionLoading(false);
   };
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this proforma invoice?')) {
-      try { await deleteProformaInvoice(id); } catch { /* fallback */ }
-      navigate('/proforma-invoices');
+      try {
+        await deleteProformaInvoice(id);
+        navigate('/proforma-invoices');
+      } catch (err) {
+        alert(err.response?.data?.message || 'Could not delete this proforma invoice. Please try again.');
+      }
     }
   };
 

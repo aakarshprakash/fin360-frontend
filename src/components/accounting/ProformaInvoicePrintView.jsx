@@ -2,6 +2,7 @@
 // with a "not a tax invoice" notice. Nothing is hardcoded — company and terms
 // details are pulled from Accounting Settings > Company / Quotation Template.
 import { API_ORIGIN } from '../../utils/api';
+import { fmtSigned, gstLabel, gstLines, num, stateCodeFor, stateFromGstin } from './invoiceFormat';
 
 const defaultCompany = {
   companyName: '', address: '', phone: '', mobile: '', email: '', website: '',
@@ -85,7 +86,7 @@ function ProformaInvoicePrintView({ proforma, company, quotationSettings }) {
           {proforma.customerPhone && <p className="qtn-meta-line">Phone No: {proforma.customerPhone}</p>}
           {proforma.customerEmail && <p className="qtn-meta-line">Email: {proforma.customerEmail}</p>}
           <p className="qtn-meta-line">GSTIN: {proforma.customerGst || '—'}</p>
-          {proforma.customerState && <p className="qtn-meta-line">State: {proforma.customerState}</p>}
+          {(proforma.customerState || stateFromGstin(proforma.customerGst)) && <p className="qtn-meta-line">State: {proforma.customerState || stateFromGstin(proforma.customerGst)}{stateCodeFor(proforma.customerState, proforma.customerGst) ? `, State Code: ${stateCodeFor(proforma.customerState, proforma.customerGst)}` : ''}</p>}
         </div>
         <table className="qtn-meta-table">
           <tbody>
@@ -121,12 +122,16 @@ function ProformaInvoicePrintView({ proforma, company, quotationSettings }) {
               <td>{(Number(item.quantity) || 0).toFixed(2)}</td>
               <td>{fmt(item.unitPrice || item.price)}</td>
               {hasDiscount && <td>{Number(item.discount) > 0 ? fmt(item.discount) : '—'}</td>}
-              <td className="qtn-td-bold">{fmt(item.total)}</td>
+              <td className="qtn-td-bold">{fmt(num(item.quantity) * num(item.unitPrice || item.price))}</td>
             </tr>
           ))}
           {items.length === 0 && (
             <tr><td colSpan={hasDiscount ? 7 : 6} className="qtn-td-empty">No items</td></tr>
           )}
+          {/* Blank space under the items, as on a printed quotation form; shrinks as items are added */}
+          <tr aria-hidden="true" style={{ height: `${Math.max(0, 60 - 14 * items.length)}mm` }}>
+            {Array.from({ length: hasDiscount ? 7 : 6 }, (_, i) => <td key={i} />)}
+          </tr>
         </tbody>
       </table>
 
@@ -141,7 +146,8 @@ function ProformaInvoicePrintView({ proforma, company, quotationSettings }) {
             <tr><td>Total</td><td>{fmt(proforma.subtotal)}</td></tr>
             {netDiscount > 0 && <tr><td>Special Discount</td><td>{fmt(netDiscount)}</td></tr>}
             {netDiscount > 0 && <tr><td>Sub Total</td><td>{fmt(subTotal)}</td></tr>}
-            {Number(proforma.tax) > 0 && <tr><td>Tax (GST)</td><td>{fmt(proforma.tax)}</td></tr>}
+            {gstLines(items, proforma.tax, co.state || stateFromGstin(co.gstNumber), proforma.customerState || stateFromGstin(proforma.customerGst)).map((t) => <tr key={gstLabel(t)}><td>{gstLabel(t)}</td><td>{fmt(t.amount)}</td></tr>)}
+            {num(proforma.roundOff) !== 0 && <tr><td>Round Off</td><td>{fmtSigned(proforma.roundOff)}</td></tr>}
             <tr className="qtn-net-row"><td>Net Amount</td><td>{fmt(proforma.total)}</td></tr>
           </tbody>
         </table>

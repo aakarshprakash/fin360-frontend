@@ -1,7 +1,7 @@
 // The ruled rows of the Classic GST invoice, shared by the stand-alone design
 // (InvoiceBoxedView) and the one printed on a full-page letterhead
 // (InvoiceBoxedPageView). Each takes the model built by InvoicePrintView.
-import { fmt, fmtDateNumeric, fmtQty, gstLabel, num, splitKeyValues } from './invoiceFormat';
+import { fmt, fmtDateNumeric, fmtQty, fmtSigned, gstLabel, num, splitKeyValues } from './invoiceFormat';
 
 const currencyLabel = (M) => (M.curr === 'INR' ? 'Rs.' : M.curr);
 
@@ -149,7 +149,7 @@ export function BoxedItemRow({ M, item, index }) {
 
 // Bank details & totals
 export function BoxedTotalsRow({ M }) {
-  const { co, L } = M;
+  const { co, L, invoice } = M;
   const cur = currencyLabel(M);
   const bank = L.sections.bankDetails && co.bankDetails ? splitKeyValues(co.bankDetails) : [];
   const leftInfo = bank.length > 0 || (L.sections.paymentOptions && M.methods.length > 0) || (L.header.taxIds === 'footer' && M.taxIds.length > 0);
@@ -176,6 +176,7 @@ export function BoxedTotalsRow({ M }) {
             {M.taxes.map((t) => (
               <tr key={gstLabel(t)}><th>{gstLabel(t)}</th><td>{fmt(t.amount)}</td></tr>
             ))}
+            {num(invoice.roundOff) !== 0 && <tr><th>Round Off</th><td>{fmtSigned(invoice.roundOff)}</td></tr>}
           </tbody>
         </table>
       </div>

@@ -15,7 +15,7 @@ import { ICONS } from '../../components/accounting/AccountingIcons';
 import InvoicePrintView from '../../components/accounting/InvoicePrintView';
 import LineDiscountInput from '../../components/accounting/LineDiscountInput';
 import { GstSelect } from '../../components/accounting/GstInputs';
-import { NO_DISCOUNT, discountAsPercent, discountFromSaved, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
+import { NO_DISCOUNT, discountAsPercent, discountFromSaved, documentTotals, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
 
 
 // Inline SVG micro-icons for line items section
@@ -104,7 +104,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
   const editSubtotal = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).subtotal, 0));
   const editDiscount = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).discount, 0));
   const editTax = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).taxAmount, 0));
-  const editTotal = round2(editSubtotal - editDiscount + editTax);
+  const editTotal = documentTotals(editItems, (Number(invoice.roundOff) || 0) !== 0).total;
 
   const saveEdit = async () => {
     setSaving(true);
@@ -113,7 +113,10 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
         const calc = calcEditItemTotal(item);
         return {
           description: item.description,
+          hsnCode: item.hsnCode || null,
+          productId: item.productId || null,
           quantity: item.quantity,
+          unit: item.unit || null,
           unitPrice: item.unitPrice,
           discount: calc.discount,
           taxRate: item.taxRate,
@@ -360,7 +363,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
               ({items.length} {items.length === 1 ? 'item' : 'items'})
             </span>
           </h3>
-          {invoice.status !== 'paid' && (
+          {!['paid', 'cancelled'].includes(invoice.status) && invoice.amountPaid + invoice.amountCredited <= 0 && (
             <button style={editBtnStyle} onClick={startEdit}
               onMouseEnter={e => { e.currentTarget.style.background = 'var(--neutral-100)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--neutral-50)'; }}>
@@ -424,6 +427,7 @@ function LineItemsSection({ invoice, setInvoice, invoiceId, formatCurrency, norm
               <span style={totalValueStyle}>{formatCurrency(invoice.tax)}</span>
             </div>
           )}
+          {(Number(invoice.roundOff) || 0) !== 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Round off</span><span style={totalValueStyle}>{Number(invoice.roundOff) < 0 ? '−' : ''}{formatCurrency(Math.abs(Number(invoice.roundOff)))}</span></div>}
           <div style={totalRowStyle(true)}>
             <span style={totalLabelStyle}>Total</span>
             <span style={totalValueStyle}>{formatCurrency(invoice.total)}</span>
@@ -882,6 +886,7 @@ ${stylesHTML}
               <tr><td>Accounts Receivable</td><td style={{textAlign:'right'}}><span className="acc-amount debit">{formatCurrency(invoice.total)}</span></td><td>-</td></tr>
               <tr><td>Sales Revenue</td><td>-</td><td style={{textAlign:'right'}}><span className="acc-amount credit">{formatCurrency(invoice.subtotal - (invoice.discount || 0))}</span></td></tr>
               {invoice.tax > 0 && <tr><td>GST Payable</td><td>-</td><td style={{textAlign:'right'}}><span className="acc-amount credit">{formatCurrency(invoice.tax)}</span></td></tr>}
+              {(Number(invoice.roundOff) || 0) !== 0 && <tr><td>Round Off</td><td style={{textAlign:'right'}}>{Number(invoice.roundOff) < 0 ? <span className="acc-amount debit">{formatCurrency(-Number(invoice.roundOff))}</span> : '-'}</td><td style={{textAlign:'right'}}>{Number(invoice.roundOff) > 0 ? <span className="acc-amount credit">{formatCurrency(Number(invoice.roundOff))}</span> : '-'}</td></tr>}
             </tbody>
           </table>
         </div>

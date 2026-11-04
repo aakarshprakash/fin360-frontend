@@ -4,7 +4,9 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { createBill, updateBill, getBill, getVendors } from '../../utils/accountingApi';
 import ProductPicker from '../../components/accounting/ProductPicker';
-import { GstSelect, PriceWithGstInput } from '../../components/accounting/GstInputs';
+import { GstSelect } from '../../components/accounting/GstInputs';
+import LinePriceInput from '../../components/accounting/LinePriceInput';
+import { lineAmounts, round2 } from '../../components/accounting/lineAmounts';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
 
@@ -62,6 +64,7 @@ function CreateBill() {
             setItems(b.items.map(item => ({
               description: item.description || '',
               hsnCode: item.hsnCode || item.hsn_code || '',
+              productId: item.productId || null,
               quantity: Number(item.quantity) || 1,
               unitPrice: Number(item.unitPrice || item.unit_price || item.price) || 0,
               taxRate: Number(item.taxRate || item.tax_rate) || 0,
@@ -106,6 +109,7 @@ function CreateBill() {
     u[idx] = {
       ...u[idx],
       description: product.name,
+      productId: product.id,
       hsnCode: product.hsnCode || product.hsn_code || '',
       unitPrice: Number(product.unitPrice || product.unit_price) || 0,
       taxRate: Number(product.taxRate || product.tax_rate) || 0,
@@ -114,14 +118,13 @@ function CreateBill() {
   };
 
   const calcItem = (item) => {
-    const sub = item.quantity * item.unitPrice;
-    const taxAmt = sub * ((Number(item.taxRate) || 0) / 100);
-    return { sub, taxAmt, total: sub + taxAmt };
+    const line = lineAmounts(item);
+    return { sub: line.gross, taxAmt: line.tax, total: line.total };
   };
 
-  const subtotal = items.reduce((s, i) => s + calcItem(i).sub, 0);
-  const totalTax = items.reduce((s, i) => s + calcItem(i).taxAmt, 0);
-  const grandTotal = subtotal + totalTax;
+  const subtotal = round2(items.reduce((s, i) => s + calcItem(i).sub, 0));
+  const totalTax = round2(items.reduce((s, i) => s + calcItem(i).taxAmt, 0));
+  const grandTotal = round2(subtotal + totalTax);
 
   const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount);
 
@@ -134,6 +137,7 @@ function CreateBill() {
         return {
           description: item.description,
           hsnCode: item.hsnCode || null,
+          productId: item.productId || null,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           taxRate: Number(item.taxRate) || 0,
@@ -159,7 +163,9 @@ function CreateBill() {
         await createBill(payload);
         navigate('/bills');
       }
-    } catch { navigate('/bills'); } finally { setSaving(false); }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not save this bill. Please try again.');
+    } finally { setSaving(false); }
   };
 
   return (
@@ -219,9 +225,7 @@ function CreateBill() {
                       {item.hsnCode && <span style={{fontSize:'11px',color:'var(--neutral-500)',display:'block',marginTop:'2px'}}>HSN: {item.hsnCode}</span>}
                     </td>
                     <td><input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(idx,'quantity',Number(e.target.value))} /></td>
-                    <td><input type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx,'unitPrice',Number(e.target.value))} />
-                        <label className="acc-price-gst"><span>With GST</span><PriceWithGstInput price={item.unitPrice} rate={item.taxRate} onChange={(price) => updateItem(idx, 'unitPrice', price)} /></label>
-                      </td>
+                    <td><LinePriceInput price={item.unitPrice} rate={item.taxRate} onChange={(price) => updateItem(idx, 'unitPrice', price)} /></td>
                     <td><GstSelect value={item.taxRate} onChange={(rate) => updateItem(idx, 'taxRate', rate)} /></td>
                     <td style={{textAlign:'right',fontWeight:500}}>{formatCurrency(calcItem(item).total)}</td>
                     <td>{items.length > 1 && <button type="button" onClick={() => removeItem(idx)} style={{width:'28px',height:'28px',borderRadius:'6px',border:'none',background:'var(--error-50)',color:'var(--error-600)',cursor:'pointer'}}>✕</button>}</td>

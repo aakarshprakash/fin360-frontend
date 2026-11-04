@@ -3,6 +3,8 @@ import { round2 } from './lineAmounts';
 
 export const num = (v) => Number(v) || 0;
 export const fmt = (v) => num(v).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Round off and similar: sign first, then the amount (−0.05)
+export const fmtSigned = (v) => `${num(v) < 0 ? '−' : ''}${fmt(Math.abs(num(v)))}`;
 export const fmtQty = (v) => num(v).toLocaleString('en-IN', { maximumFractionDigits: 3 });
 export const fmtRate = (r) => `${num(r).toFixed(2).replace(/\.?0+$/, '')}%`;
 export const fmtDate = (d) => (d

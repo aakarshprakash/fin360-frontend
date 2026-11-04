@@ -6,6 +6,7 @@ import { API_ORIGIN } from '../../utils/api';
 import QuotationLetterheadView from './QuotationLetterheadView';
 import QuotationPageView from './QuotationPageView';
 import { resolveQuotationSettings } from './quotationTemplates';
+import { fmtSigned, gstLabel, gstLines, num, stateCodeFor, stateFromGstin } from './invoiceFormat';
 
 const defaultCompany = {
   companyName: '', address: '', phone: '', mobile: '', email: '', website: '',
@@ -94,7 +95,7 @@ function QuotationPrintView({ quotation, company, quotationSettings }) {
           {quotation.customerPhone && <p className="qtn-meta-line">Phone No: {quotation.customerPhone}</p>}
           {quotation.customerEmail && <p className="qtn-meta-line">Email: {quotation.customerEmail}</p>}
           <p className="qtn-meta-line">GSTIN: {quotation.customerGst || '—'}</p>
-          {quotation.customerState && <p className="qtn-meta-line">State: {quotation.customerState}</p>}
+          {(quotation.customerState || stateFromGstin(quotation.customerGst)) && <p className="qtn-meta-line">State: {quotation.customerState || stateFromGstin(quotation.customerGst)}{stateCodeFor(quotation.customerState, quotation.customerGst) ? `, State Code: ${stateCodeFor(quotation.customerState, quotation.customerGst)}` : ''}</p>}
         </div>
         <table className="qtn-meta-table">
           <tbody>
@@ -129,12 +130,16 @@ function QuotationPrintView({ quotation, company, quotationSettings }) {
               <td>{(Number(item.quantity) || 0).toFixed(2)}</td>
               <td>{fmt(item.unitPrice || item.price)}</td>
               {hasDiscount && <td>{Number(item.discount) > 0 ? fmt(item.discount) : '—'}</td>}
-              <td className="qtn-td-bold">{fmt(item.total)}</td>
+              <td className="qtn-td-bold">{fmt(num(item.quantity) * num(item.unitPrice || item.price))}</td>
             </tr>
           ))}
           {items.length === 0 && (
             <tr><td colSpan={hasDiscount ? 7 : 6} className="qtn-td-empty">No items</td></tr>
           )}
+          {/* Blank space under the items, as on a printed quotation form; shrinks as items are added */}
+          <tr aria-hidden="true" style={{ height: `${Math.max(0, 60 - 14 * items.length)}mm` }}>
+            {Array.from({ length: hasDiscount ? 7 : 6 }, (_, i) => <td key={i} />)}
+          </tr>
         </tbody>
       </table>
 
@@ -149,7 +154,8 @@ function QuotationPrintView({ quotation, company, quotationSettings }) {
             <tr><td>Total</td><td>{fmt(quotation.subtotal)}</td></tr>
             {netDiscount > 0 && <tr><td>Special Discount</td><td>{fmt(netDiscount)}</td></tr>}
             {netDiscount > 0 && <tr><td>Sub Total</td><td>{fmt(subTotal)}</td></tr>}
-            {Number(quotation.tax) > 0 && <tr><td>Tax (GST)</td><td>{fmt(quotation.tax)}</td></tr>}
+            {gstLines(items, quotation.tax, co.state || stateFromGstin(co.gstNumber), quotation.customerState || stateFromGstin(quotation.customerGst)).map((t) => <tr key={gstLabel(t)}><td>{gstLabel(t)}</td><td>{fmt(t.amount)}</td></tr>)}
+            {num(quotation.roundOff) !== 0 && <tr><td>Round Off</td><td>{fmtSigned(quotation.roundOff)}</td></tr>}
             <tr className="qtn-net-row"><td>Net Amount</td><td>{fmt(quotation.total)}</td></tr>
           </tbody>
         </table>

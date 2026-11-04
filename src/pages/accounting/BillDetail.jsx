@@ -2,10 +2,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
-import { getBill, updateBillStatus, recordBillPayment, deleteBill } from '../../utils/accountingApi';
+import { getBill, recordBillPayment, voidBillPayment, deleteBill } from '../../utils/accountingApi';
 import useSnackbar from '../../utils/useSnackbar';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
+import { round2 } from '../../components/accounting/lineAmounts';
 
 function normalizeBill(b) {
   let vendorName = 'Unknown';
@@ -65,21 +66,7 @@ function BillDetail() {
   }, [id]);
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Number(amount) || 0);
-
-  const handleStatusChange = async (newStatus) => {
-    setActionLoading(true);
-    try {
-      await updateBillStatus(id, newStatus);
-      setBill({ ...bill, status: newStatus });
-      showSnackbar(`Bill marked as ${newStatus}.`, 'success');
-    } catch (err) {
-      // Leave status as-is if the backend rejects it (e.g. can't mark paid
-      // without a full payment on record) — never show a status the server disagrees with.
-      showSnackbar(err.response?.data?.message || 'Could not update status. Please try again.', 'error');
-    }
-    setActionLoading(false);
-  };
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Number(amount) || 0);
 
   const handleRecordPayment = async (e) => {
     e.preventDefault();
@@ -96,6 +83,19 @@ function BillDetail() {
     } catch (err) {
       // Keep the form open and the bill untouched — the payment was not saved.
       showSnackbar(err.response?.data?.message || 'Could not record payment. Please try again.', 'error');
+    }
+    setActionLoading(false);
+  };
+
+  const handleVoidPayment = async (payment) => {
+    if (!window.confirm(`Void this payment of ${formatCurrency(payment.amount)}? Its ledger entry is reversed and the amount goes back on the bill.`)) return;
+    setActionLoading(true);
+    try {
+      const res = await voidBillPayment(id, payment.id);
+      if (res.data?.bill?.id) setBill(normalizeBill(res.data.bill));
+      showSnackbar('Payment voided.', 'success');
+    } catch (err) {
+      showSnackbar(err.response?.data?.message || 'Could not void this payment. Please try again.', 'error');
     }
     setActionLoading(false);
   };
@@ -126,7 +126,7 @@ function BillDetail() {
     </Layout>
   );
 
-  const balanceDue = bill.total - (bill.amountPaid || 0);
+  const balanceDue = Math.max(0, round2(bill.total - (bill.amountPaid || 0)));
 
   return (
     <Layout>
@@ -141,19 +141,14 @@ function BillDetail() {
             </div>
           </div>
           <div className="header-actions" style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
-            {bill.status !== 'paid' && (
+            {!['paid', 'cancelled'].includes(bill.status) && bill.amountPaid <= 0 && (
               <Link to={`/bills/${id}/edit`} className="acc-btn acc-btn-secondary">
                 {ICONS.edit} Edit
               </Link>
             )}
-            {bill.status !== 'paid' && (
+            {!['paid', 'cancelled', 'draft'].includes(bill.status) && (
               <button className="acc-btn acc-btn-primary" onClick={() => { setPaymentData({...paymentData, amount: balanceDue}); setShowPaymentForm(true); }} disabled={actionLoading}>
                 {ICONS.creditCard} Record Payment
-              </button>
-            )}
-            {bill.status === 'pending' && (
-              <button className="acc-btn acc-btn-success" onClick={() => handleStatusChange('paid')} disabled={actionLoading}>
-                {ICONS.checkCircle} Mark Paid
               </button>
             )}
             <button className="acc-btn acc-btn-danger" onClick={handleDelete} disabled={actionLoading} style={{padding:'8px 14px',fontSize:'13px'}}>
@@ -180,7 +175,7 @@ function BillDetail() {
             <h3 style={{margin:'0 0 16px',fontSize:'16px',fontWeight:600}}>{ICONS.creditCard} Record Payment</h3>
             <form onSubmit={handleRecordPayment}>
               <div className="acc-form-row">
-                <div className="acc-form-group"><label>Amount *</label><input type="number" min="0" step="0.01" value={paymentData.amount} onChange={(e) => setPaymentData({...paymentData, amount: e.target.value})} required /></div>
+                <div className="acc-form-group"><label>Amount *</label><input type="number" min="0.01" max={balanceDue} step="0.01" value={paymentData.amount} onChange={(e) => setPaymentData({...paymentData, amount: e.target.value})} required /></div>
                 <div className="acc-form-group"><label>Date *</label><input type="date" value={paymentData.date} onChange={(e) => setPaymentData({...paymentData, date: e.target.value})} required /></div>
               </div>
               <div className="acc-form-row">
@@ -203,7 +198,7 @@ function BillDetail() {
           <div className="acc-table-container" style={{marginBottom:'24px'}}>
             <div className="acc-table-toolbar"><h3 style={{margin:0}}>Payment History</h3></div>
             <table className="acc-table">
-              <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th style={{textAlign:'right'}}>Amount</th></tr></thead>
+              <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th style={{textAlign:'right'}}>Amount</th><th></th></tr></thead>
               <tbody>
                 {bill.payments.map((p, idx) => (
                   <tr key={idx}>
@@ -211,6 +206,7 @@ function BillDetail() {
                     <td>{p.method || '—'}</td>
                     <td style={{fontFamily:'monospace'}}>{p.reference || '-'}</td>
                     <td style={{textAlign:'right'}}><span className="acc-amount credit">{formatCurrency(p.amount)}</span></td>
+                    <td style={{textAlign:'right'}}><button type="button" className="acc-btn acc-btn-secondary" style={{padding:'4px 10px',fontSize:'12px'}} onClick={() => handleVoidPayment(p)} disabled={actionLoading}>Void</button></td>
                   </tr>
                 ))}
               </tbody>

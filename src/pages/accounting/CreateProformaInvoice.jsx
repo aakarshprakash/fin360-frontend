@@ -4,9 +4,12 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { createProformaInvoice, updateProformaInvoice, getProformaInvoice, getAccountingCustomers } from '../../utils/accountingApi';
 import ProductPicker from '../../components/accounting/ProductPicker';
-import { GstSelect, PriceWithGstInput } from '../../components/accounting/GstInputs';
+import { GstSelect } from '../../components/accounting/GstInputs';
+import LinePriceInput from '../../components/accounting/LinePriceInput';
+import CustomerTaxHint from '../../components/accounting/CustomerTaxHint';
 import LineDiscountInput from '../../components/accounting/LineDiscountInput';
-import { NO_DISCOUNT, discountFromSaved, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
+import { NO_DISCOUNT, discountFromSaved, documentTotals, lineAmounts } from '../../components/accounting/lineAmounts';
+import DocumentTotals from '../../components/accounting/DocumentTotals';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
 
@@ -21,6 +24,7 @@ function CreateProformaInvoice() {
   const { id } = useParams(); // edit mode if id exists
   const isEdit = Boolean(id);
   const [saving, setSaving] = useState(false);
+  const [roundTotal, setRoundTotal] = useState(true);
   const [loadingProforma, setLoadingProforma] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [customerSearch, setCustomerSearch] = useState('');
@@ -76,6 +80,7 @@ function CreateProformaInvoice() {
             useSignature: (p.useSignature ?? p.use_signature) !== false,
           });
           setCustomerSearch(customerName);
+          setRoundTotal(Number(p.roundOff) !== 0);
 
           if (Array.isArray(p.items) && p.items.length > 0) {
             setItems(p.items.map(item => ({
@@ -147,13 +152,13 @@ function CreateProformaInvoice() {
 
   const updateItemDiscount = (idx, patchValues) => setItems(items.map((it, i) => (i === idx ? { ...it, ...patchValues } : it)));
 
-  const subtotal = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).subtotal, 0));
-  const totalDiscount = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).discountAmount, 0));
-  const totalTax = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).taxAmount, 0));
-  const grandTotal = round2(subtotal - totalDiscount + totalTax);
+  const { subtotal, discount: totalDiscount, tax: totalTax, total: grandTotal } = documentTotals(items, roundTotal);
+
+  const problem = !form.customer.trim() ? 'Choose or type a customer.' : !items.some((i) => i.description.trim() && Number(i.unitPrice) > 0) ? 'Add at least one item with a price.' : '';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (problem) { alert(problem); return; }
     setSaving(true);
     try {
       const preparedItems = items.map(item => {
@@ -181,6 +186,7 @@ function CreateProformaInvoice() {
         termsAndConditions: form.termsAndConditions,
         branch: form.branch,
         useSignature: form.useSignature,
+        roundTotal,
         items: preparedItems,
         subtotal,
         tax: totalTax,
@@ -194,9 +200,8 @@ function CreateProformaInvoice() {
         await createProformaInvoice(payload);
       }
       navigate('/proforma-invoices');
-    } catch {
-      alert('Proforma invoice saved locally (API not available)');
-      navigate('/proforma-invoices');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not save this proforma invoice. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -255,6 +260,7 @@ function CreateProformaInvoice() {
                   </div>
                 )}
                 {form.customerId && <span style={{fontSize:'11px',color:'var(--success-700)',marginTop:'4px',display:'block'}}>✓ Linked to customer #{form.customerId}</span>}
+                {form.customerId && <CustomerTaxHint customer={customers.find((c) => c.id === form.customerId)} />}
               </div>
               <div className="acc-form-group">
                 <label>Currency</label>
@@ -300,12 +306,12 @@ function CreateProformaInvoice() {
             <table className="acc-line-items">
               <thead>
                 <tr>
-                  <th style={{width:'28%'}}>Description</th>
+                  <th style={{width:'25%'}}>Description</th>
                   <th style={{width:'7%'}}>Qty</th>
-                  <th style={{width:'13%'}}>Price</th>
+                  <th style={{width:'16%'}}>Price</th>
                   <th style={{width:'12%'}}>Tax</th>
                   <th style={{width:'8%'}}>Disc. %</th>
-                  <th style={{width:'12%'}}>Disc. ₹</th>
+                  <th style={{width:'12%'}} title="Amount off the price including GST">Disc. ₹ (with GST)</th>
                   <th style={{width:'12%',textAlign:'right'}}>Total</th>
                   <th style={{width:'3%'}}></th>
                 </tr>
@@ -325,9 +331,7 @@ function CreateProformaInvoice() {
                         {item.hsnCode && <span style={{fontSize:'11px',color:'var(--neutral-500)',display:'block',marginTop:'2px'}}>HSN: {item.hsnCode}</span>}
                       </td>
                       <td><input type="number" min="1" value={item.quantity} onChange={(e) => updateItem(idx, 'quantity', Number(e.target.value))} /></td>
-                      <td><input type="number" min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', Number(e.target.value))} />
-                        <label className="acc-price-gst"><span>With GST</span><PriceWithGstInput price={item.unitPrice} rate={item.taxRate} onChange={(price) => updateItem(idx, 'unitPrice', price)} /></label>
-                      </td>
+                      <td><LinePriceInput price={item.unitPrice} rate={item.taxRate} currency={form.currency} onChange={(price) => updateItem(idx, 'unitPrice', price)} /></td>
                       <td>
                         <GstSelect value={item.taxRate} onChange={(rate) => updateItem(idx, 'taxRate', rate)} />
                       </td>
@@ -346,15 +350,8 @@ function CreateProformaInvoice() {
               </tbody>
             </table>
 
-            <div className="acc-totals">
-              <div className="total-row"><span className="total-label">Subtotal</span><span className="total-value">{formatCurrency(subtotal)}</span></div>
-              {totalDiscount > 0 && <div className="total-row"><span className="total-label">Discount</span><span className="total-value" style={{color:'var(--error-600)'}}>-{formatCurrency(totalDiscount)}</span></div>}
-              <div className="total-row"><span className="total-label">Tax</span><span className="total-value">{formatCurrency(totalTax)}</span></div>
-              <div className="total-row grand-total"><span className="total-label">Grand Total</span><span className="total-value">{formatCurrency(grandTotal)}</span></div>
-              {form.currency !== 'INR' && (
-                <div className="total-row"><span className="total-label">Base Amount (INR)</span><span className="total-value">{new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(grandTotal * form.exchangeRate)}</span></div>
-              )}
-            </div>
+            <DocumentTotals items={items} roundTotal={roundTotal} onRoundTotalChange={setRoundTotal}
+              currency={form.currency} exchangeRate={form.exchangeRate} />
           </div>
 
           {/* Notes & Terms */}
@@ -375,11 +372,18 @@ function CreateProformaInvoice() {
             </label>
           </div>
 
-          <div style={{display:'flex',gap:'12px',justifyContent:'flex-end',marginTop:'24px'}}>
-            <button type="button" className="acc-btn acc-btn-secondary" onClick={() => navigate('/proforma-invoices')}>Cancel</button>
-            <button type="submit" className="acc-btn acc-btn-primary" disabled={saving}>
-              {saving ? 'Saving...' : isEdit ? 'Update Proforma Invoice' : 'Create Proforma Invoice'}
-            </button>
+          <div className="doc-actionbar">
+            <div className="doc-actionbar-total">
+              <small>Net amount</small>
+              <strong>{formatCurrency(grandTotal)}</strong>
+              {problem && <span className="doc-actionbar-hint">{problem}</span>}
+            </div>
+            <div className="doc-actionbar-buttons">
+              <button type="button" className="acc-btn acc-btn-secondary" onClick={() => navigate('/proforma-invoices')}>Cancel</button>
+              <button type="submit" className="acc-btn acc-btn-primary" disabled={saving}>
+                {saving ? 'Saving...' : isEdit ? 'Update Proforma Invoice' : 'Create Proforma Invoice'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

@@ -4,9 +4,12 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { createInvoice, updateInvoice, getInvoice, getAccountingCustomers, getInvoiceTemplateSettings } from '../../utils/accountingApi';
 import ProductPicker from '../../components/accounting/ProductPicker';
-import { GstSelect, PriceWithGstInput } from '../../components/accounting/GstInputs';
+import { GstSelect } from '../../components/accounting/GstInputs';
+import LinePriceInput from '../../components/accounting/LinePriceInput';
+import CustomerTaxHint from '../../components/accounting/CustomerTaxHint';
 import LineDiscountInput from '../../components/accounting/LineDiscountInput';
-import { NO_DISCOUNT, discountFromSaved, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
+import { NO_DISCOUNT, discountFromSaved, documentTotals, lineAmounts } from '../../components/accounting/lineAmounts';
+import DocumentTotals from '../../components/accounting/DocumentTotals';
 import { resolveInvoiceLayout } from '../../components/accounting/invoiceTemplates';
 import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
@@ -16,6 +19,7 @@ function CreateInvoice() {
   const { id } = useParams(); // edit mode if id exists
   const isEdit = Boolean(id);
   const [saving, setSaving] = useState(false);
+  const [roundTotal, setRoundTotal] = useState(false);
   const [loadingInvoice, setLoadingInvoice] = useState(false);
   const [invoiceLocked, setInvoiceLocked] = useState(false);
   const [customers, setCustomers] = useState([]);
@@ -90,6 +94,7 @@ function CreateInvoice() {
             extraFields: inv.extraFields && typeof inv.extraFields === 'object' ? inv.extraFields : {},
           });
           setCustomerSearch(customerName);
+          setRoundTotal(Number(inv.roundOff) !== 0);
 
           if (Array.isArray(inv.items) && inv.items.length > 0) {
             setItems(inv.items.map(item => ({
@@ -104,8 +109,8 @@ function CreateInvoice() {
             })));
           }
 
-          const amountPaid = Number(inv.amountPaid || inv.amount_paid) || 0;
-          setInvoiceLocked(amountPaid > 0);
+          const settled = (Number(inv.amountPaid) || 0) + (Number(inv.amountCredited) || 0) > 0;
+          setInvoiceLocked(settled || ['paid', 'cancelled'].includes(inv.status));
         }
       } catch { /* use defaults */ }
       setLoadingInvoice(false);
@@ -170,13 +175,13 @@ function CreateInvoice() {
 
   const updateItemDiscount = (idx, patchValues) => setItems(items.map((it, i) => (i === idx ? { ...it, ...patchValues } : it)));
 
-  const subtotal = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).subtotal, 0));
-  const totalDiscount = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).discountAmount, 0));
-  const totalTax = round2(items.reduce((sum, item) => sum + calculateItemTotal(item).taxAmount, 0));
-  const grandTotal = round2(subtotal - totalDiscount + totalTax);
+  const { subtotal, discount: totalDiscount, tax: totalTax, total: grandTotal, roundOff } = documentTotals(items, roundTotal);
+
+  const problem = !form.customer.trim() ? 'Choose or type a customer.' : !items.some((i) => i.description.trim() && Number(i.unitPrice) > 0) ? 'Add at least one item with a price.' : '';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (problem) { alert(problem); return; }
     setSaving(true);
     try {
       // Prepare items with tax rate for backend
@@ -207,11 +212,14 @@ function CreateInvoice() {
         useSignature: form.useSignature,
         shipTo: form.shipTo,
         extraFields: form.extraFields,
-        items: preparedItems,
-        subtotal,
-        tax: totalTax,
-        discount: totalDiscount,
-        total: grandTotal,
+        ...(invoiceLocked ? {} : {
+          roundTotal,
+          items: preparedItems,
+          subtotal,
+          tax: totalTax,
+          discount: totalDiscount,
+          total: grandTotal,
+        }),
       };
 
       if (isEdit) {
@@ -221,9 +229,8 @@ function CreateInvoice() {
         await createInvoice(payload);
         navigate('/invoices');
       }
-    } catch {
-      alert(isEdit ? 'Could not save changes.' : 'Invoice saved locally (API not available)');
-      if (!isEdit) navigate('/invoices');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not save this invoice. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -252,7 +259,7 @@ function CreateInvoice() {
         <form onSubmit={handleSubmit}>
           {invoiceLocked && (
             <div style={{marginBottom:'16px',padding:'12px 16px',background:'var(--warning-50)',border:'1px solid var(--warning-200)',borderRadius:'8px',fontSize:'13px',color:'var(--warning-800)'}}>
-              A payment has already been recorded against this invoice, so line items and amounts are locked to keep the accounting entry accurate. You can still update the customer, dates, and notes.
+              This invoice has a payment or credit note, or is closed, so line items and amounts are locked to keep the accounting entry accurate. You can still update the customer, dates, and notes.
             </div>
           )}
           <div className="acc-table-container" style={{padding:'24px',marginBottom:'24px'}}>
@@ -280,6 +287,7 @@ function CreateInvoice() {
                   </div>
                 )}
                 {form.customerId && <span style={{fontSize:'11px',color:'var(--success-700)',marginTop:'4px',display:'block'}}>✓ Linked to customer #{form.customerId}</span>}
+                {form.customerId && <CustomerTaxHint customer={customers.find((c) => c.id === form.customerId)} />}
               </div>
               <div className="acc-form-group">
                 <label>Currency</label>
@@ -338,13 +346,13 @@ function CreateInvoice() {
             <table className="acc-line-items">
               <thead>
                 <tr>
-                  <th style={{width:'28%'}}>Description</th>
+                  <th style={{width:'25%'}}>Description</th>
                   <th style={{width:'7%'}}>Qty</th>
                   {printLayout.columns.uom && <th style={{width:'8%'}}>Unit</th>}
-                  <th style={{width:'13%'}}>Price</th>
+                  <th style={{width:'16%'}}>Price</th>
                   <th style={{width:'12%'}}>Tax</th>
                   <th style={{width:'8%'}}>Disc. %</th>
-                  <th style={{width:'12%'}}>Disc. ₹</th>
+                  <th style={{width:'12%'}} title="Amount off the price including GST">Disc. ₹ (with GST)</th>
                   <th style={{width:'12%',textAlign:'right'}}>Total</th>
                   <th style={{width:'3%'}}></th>
                 </tr>
@@ -374,9 +382,7 @@ function CreateInvoice() {
                         <td><input type="text" disabled={invoiceLocked} maxLength={20} value={item.unit} placeholder="NOS" aria-label="Unit"
                           onChange={(e) => updateItem(idx, 'unit', e.target.value.toUpperCase())} /></td>
                       )}
-                      <td><input type="number" disabled={invoiceLocked} min="0" step="0.01" value={item.unitPrice} onChange={(e) => updateItem(idx, 'unitPrice', Number(e.target.value))} />
-                        <label className="acc-price-gst"><span>With GST</span><PriceWithGstInput price={item.unitPrice} rate={item.taxRate} disabled={invoiceLocked} onChange={(price) => updateItem(idx, 'unitPrice', price)} /></label>
-                      </td>
+                      <td><LinePriceInput price={item.unitPrice} rate={item.taxRate} disabled={invoiceLocked} currency={form.currency} onChange={(price) => updateItem(idx, 'unitPrice', price)} /></td>
                       <td>
                         <GstSelect disabled={invoiceLocked} value={item.taxRate} onChange={(rate) => updateItem(idx, 'taxRate', rate)} />
                       </td>
@@ -395,15 +401,8 @@ function CreateInvoice() {
               </tbody>
             </table>
 
-            <div className="acc-totals">
-              <div className="total-row"><span className="total-label">Subtotal</span><span className="total-value">{formatCurrency(subtotal)}</span></div>
-              {totalDiscount > 0 && <div className="total-row"><span className="total-label">Discount</span><span className="total-value" style={{color:'var(--error-600)'}}>-{formatCurrency(totalDiscount)}</span></div>}
-              <div className="total-row"><span className="total-label">Tax</span><span className="total-value">{formatCurrency(totalTax)}</span></div>
-              <div className="total-row grand-total"><span className="total-label">Grand Total</span><span className="total-value">{formatCurrency(grandTotal)}</span></div>
-              {form.currency !== 'INR' && (
-                <div className="total-row"><span className="total-label">Base Amount (INR)</span><span className="total-value">{new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(grandTotal * form.exchangeRate)}</span></div>
-              )}
-            </div>
+            <DocumentTotals items={items} roundTotal={roundTotal} onRoundTotalChange={setRoundTotal}
+              currency={form.currency} exchangeRate={form.exchangeRate} disabled={invoiceLocked} />
           </div>
 
           {/* Accounting Entry Preview */}
@@ -415,6 +414,7 @@ function CreateInvoice() {
                 <tr><td>Accounts Receivable</td><td style={{textAlign:'right'}}><span className="acc-amount debit">{formatCurrency(grandTotal)}</span></td><td style={{textAlign:'right'}}>-</td></tr>
                 <tr><td>Sales Revenue</td><td style={{textAlign:'right'}}>-</td><td style={{textAlign:'right'}}><span className="acc-amount credit">{formatCurrency(subtotal - totalDiscount)}</span></td></tr>
                 {totalTax > 0 && <tr><td>GST Payable</td><td style={{textAlign:'right'}}>-</td><td style={{textAlign:'right'}}><span className="acc-amount credit">{formatCurrency(totalTax)}</span></td></tr>}
+                {roundOff !== 0 && <tr><td>Round Off</td><td style={{textAlign:'right'}}>{roundOff < 0 ? <span className="acc-amount debit">{formatCurrency(-roundOff)}</span> : '-'}</td><td style={{textAlign:'right'}}>{roundOff > 0 ? <span className="acc-amount credit">{formatCurrency(roundOff)}</span> : '-'}</td></tr>}
               </tbody>
             </table>
           </div>
@@ -429,9 +429,18 @@ function CreateInvoice() {
             Use uploaded Seal &amp; Signature on this document
           </label>
 
-          <div style={{display:'flex',gap:'12px',justifyContent:'flex-end',marginTop:'24px'}}>
-            <button type="button" className="acc-btn acc-btn-secondary" onClick={() => navigate('/invoices')}>Cancel</button>
-            <button type="submit" className="acc-btn acc-btn-primary" disabled={saving}>{saving ? 'Saving...' : (isEdit ? 'Save Changes' : 'Create Invoice')}</button>
+          <div className="doc-actionbar">
+            <div className="doc-actionbar-total">
+              <small>Net amount</small>
+              <strong>{formatCurrency(grandTotal)}</strong>
+              {problem && <span className="doc-actionbar-hint">{problem}</span>}
+            </div>
+            <div className="doc-actionbar-buttons">
+              <button type="button" className="acc-btn acc-btn-secondary" onClick={() => navigate('/invoices')}>Cancel</button>
+              <button type="submit" className="acc-btn acc-btn-primary" disabled={saving}>
+                {saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Invoice'}
+              </button>
+            </div>
           </div>
         </form>
         )}

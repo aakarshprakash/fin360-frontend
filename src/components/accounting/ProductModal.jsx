@@ -29,7 +29,7 @@ const toForm = (p) => ({
   features: p?.features || '',
   unitPrice: p ? Number(p.unitPrice) || 0 : '',
   purchasePrice: p?.purchasePrice != null ? Number(p.purchasePrice) : '',
-  taxRate: p ? Number(p.taxRate) || 0 : 18,
+  taxRate: p ? Number(p.taxRate) || 0 : 5,
   trackStock: !!p?.trackStock,
   openingStock: '',
   reorderLevel: p?.reorderLevel != null ? Number(p.reorderLevel) : '',

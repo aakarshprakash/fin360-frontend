@@ -1,0 +1,45 @@
+/* A line's price: read-only text with "Edit price", or one box with an incl./excl. GST switch */
+.lp { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 130px; }
+.lp-main { white-space: nowrap; font-size: 13.5px; font-weight: 600; color: var(--neutral-900); font-variant-numeric: tabular-nums; }
+.lp-tag { margin-left: 6px; font-size: 10.5px; font-weight: 500; color: var(--neutral-500); }
+.lp-sub, .lp-hint { font-size: 11.5px; color: var(--neutral-500); font-variant-numeric: tabular-nums; }
+.lp-edit, .lp-done {
+  margin-top: 2px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--primary-700, #6d28d9);
+  cursor: pointer;
+}
+.lp-edit:hover, .lp-done:hover { text-decoration: underline; }
+.lp-edit:focus-visible, .lp-done:focus-visible, .lp-seg button:focus-visible {
+  outline: 2px solid var(--primary-500, #8b5cf6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.lp-done:disabled { color: var(--neutral-400); cursor: default; text-decoration: none; }
+
+.lp-editing { width: 100%; gap: 6px; }
+.lp-editing input { width: 100%; font-weight: 600; font-size: 13px; }
+.lp-seg {
+  display: inline-flex;
+  width: 100%;
+  padding: 2px;
+  background: var(--neutral-100);
+  border-radius: 8px;
+}
+.lp-seg button {
+  flex: 1;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--neutral-600);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lp-seg button[aria-pressed="true"] { background: #fff; color: var(--primary-700, #6d28d9); box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12); }

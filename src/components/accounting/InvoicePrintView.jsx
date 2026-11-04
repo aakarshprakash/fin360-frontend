@@ -6,7 +6,7 @@
 import { API_ORIGIN } from '../../utils/api';
 import { FONT_STACKS, TEXT_SIZES, resolveInvoiceLayout, textOn } from './invoiceTemplates';
 import {
-  amountInWords, fmt, fmtDate, fmtQty, fmtRate, gstLabel, gstLines, num, oneLine,
+  amountInWords, fmt, fmtDate, fmtQty, fmtRate, fmtSigned, gstLabel, gstLines, num, oneLine, stateFromGstin,
   panFromGstin, stateCodeFor,
 } from './invoiceFormat';
 import InvoiceBoxedView from './InvoiceBoxedView';
@@ -69,7 +69,7 @@ function buildModel({ invoice, company, paymentMethods, template }) {
     settled: amountPaid + amountCredited > 0,
     balanceDue: Math.max(0, num(invoice.total) - amountPaid - amountCredited),
     taxableTotal: num(invoice.subtotal) - discount,
-    taxes: gstLines(items, invoice.tax, co.state, invoice.customerState),
+    taxes: gstLines(items, invoice.tax, co.state || stateFromGstin(co.gstNumber), invoice.customerState || stateFromGstin(invoice.customerGst)),
     words: amountInWords(invoice.total),
     customer: {
       name: invoice.customer || '—',
@@ -78,7 +78,7 @@ function buildModel({ invoice, company, paymentMethods, template }) {
       email: invoice.customerEmail || '',
       gstin: customerGstin,
       pan: invoice.customerPan || panFromGstin(customerGstin),
-      state: invoice.customerState || '',
+      state: invoice.customerState || stateFromGstin(customerGstin),
       stateCode: stateCodeFor(invoice.customerState, customerGstin),
       contact: invoice.customerContact || '',
     },
@@ -278,6 +278,7 @@ function InvoicePrintView(props) {
             <tr><th>{M.hasTax ? 'Taxable Amount' : 'Sub Total'}</th><td>{fmt(M.taxableTotal)}</td></tr>
             {M.discount > 0 && <tr><th>Discount</th><td>− {fmt(M.discount)}</td></tr>}
             {M.taxes.map((t) => <tr key={gstLabel(t)}><th>{gstLabel(t)}</th><td>{fmt(t.amount)}</td></tr>)}
+            {num(invoice.roundOff) !== 0 && <tr><th>Round Off</th><td>{fmtSigned(invoice.roundOff)}</td></tr>}
             <tr className="inv-grand"><th>Total</th><td>₹ {fmt(invoice.total)}</td></tr>
             {M.amountPaid > 0 && <tr><th>Amount Paid</th><td>{fmt(M.amountPaid)}</td></tr>}
             {M.amountCredited > 0 && <tr><th>Credit Notes</th><td>− {fmt(M.amountCredited)}</td></tr>}

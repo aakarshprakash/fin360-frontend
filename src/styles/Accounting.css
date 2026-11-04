@@ -1311,11 +1311,11 @@
   color: var(--neutral-600);
   text-align: center;
 }
-.qtn-td-center { text-align: center; color: var(--neutral-500); }
-.qtn-td-left { text-align: left; font-weight: 500; color: var(--neutral-800); }
-.qtn-td-mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 9.5px; text-align: center; }
+.qtn-items td.qtn-td-center { text-align: center; color: var(--neutral-500); }
+.qtn-items td.qtn-td-left { text-align: left; font-weight: 500; color: var(--neutral-800); }
+.qtn-items td.qtn-td-mono { font-family: 'DejaVu Sans Mono', monospace; font-size: 9.5px; text-align: center; }
 .qtn-td-bold { font-weight: 600; color: var(--neutral-900); }
-.qtn-td-empty { text-align: center; color: var(--neutral-400); padding: 24px; }
+.qtn-items td.qtn-td-empty { text-align: center; color: var(--neutral-400); padding: 24px; }
 
 .qtn-totals-row {
   display: flex;

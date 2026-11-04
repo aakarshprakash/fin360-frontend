@@ -4,7 +4,7 @@
 // terms page breaks between lines, never through the letterhead.
 import { API_ORIGIN } from '../../utils/api';
 import LetterheadDocument from './LetterheadDocument';
-import { amountInWords, fmt, fmtDateNumeric, fmtQty, num } from './invoiceFormat';
+import { amountInWords, fmt, fmtDateNumeric, fmtQty, fmtSigned, gstLabel, gstLines, num, stateFromGstin } from './invoiceFormat';
 import { splitTermsHtml, termsToHtml } from './richText';
 
 const src = (path) => `${API_ORIGIN}/storage/${path}`;
@@ -13,7 +13,6 @@ function QuotationPageView({ quotation, company, settings: qs }) {
   const co = company || {};
   const items = quotation.items || [];
   const discount = num(quotation.discount);
-  const tax = num(quotation.tax);
   const cur = quotation.currency && quotation.currency !== 'INR' ? quotation.currency : '₹';
 
   const groups = {
@@ -100,10 +99,12 @@ function QuotationPageView({ quotation, company, settings: qs }) {
   });
 
   const totals = qs.showTotals ? [
-    totalRow('t-sub', 'SUB TOTAL', fmt(num(quotation.subtotal))),
-    discount > 0 && totalRow('t-disc', 'DISCOUNT', `− ${fmt(discount)}`),
-    tax > 0 && totalRow('t-gst', 'GST', fmt(tax)),
-    totalRow('t-grand', `GRAND TOTAL (${cur})`, fmt(quotation.total), 'lhp-grand-row'),
+    totalRow('t-sub', 'TOTAL', fmt(num(quotation.subtotal))),
+    discount > 0 && totalRow('t-disc', 'SPECIAL DISCOUNT', `− ${fmt(discount)}`),
+    discount > 0 && totalRow('t-taxable', 'SUB TOTAL', fmt(num(quotation.subtotal) - discount)),
+    ...gstLines(items, quotation.tax, co.state || stateFromGstin(co.gstNumber), quotation.customerState || stateFromGstin(quotation.customerGst)).map((t) => totalRow(`t-gst-${gstLabel(t)}`, gstLabel(t).toUpperCase(), fmt(t.amount))),
+    num(quotation.roundOff) !== 0 && totalRow('t-round', 'ROUND OFF', fmtSigned(quotation.roundOff)),
+    totalRow('t-grand', `NET AMOUNT (${cur})`, fmt(quotation.total), 'lhp-grand-row'),
     {
       key: 't-words',
       group: 'items',

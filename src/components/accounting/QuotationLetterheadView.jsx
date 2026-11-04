@@ -8,7 +8,7 @@
 // table's thead/tfoot spacers (also repeated per page) keep content clear of them.
 import { Mail, MapPin, Phone } from 'lucide-react';
 import { API_ORIGIN } from '../../utils/api';
-import { amountInWords, fmt, fmtDateNumeric, fmtQty, num, splitKeyValues } from './invoiceFormat';
+import { amountInWords, fmt, fmtDateNumeric, fmtQty, fmtSigned, gstLabel, gstLines, num, splitKeyValues, stateFromGstin } from './invoiceFormat';
 import { renderTermsHtml } from './richText';
 import '../../styles/QuotationLetterhead.css';
 
@@ -117,7 +117,6 @@ function QuotationLetterheadView({ quotation, company, settings }) {
   const qs = settings;
   const items = quotation.items || [];
   const discount = num(quotation.discount);
-  const tax = num(quotation.tax);
   const cur = quotation.currency && quotation.currency !== 'INR' ? quotation.currency : '₹';
   const hasTerms = (qs.termsHtml || '').trim() || (qs.terms || []).length > 0 || quotation.termsAndConditions;
   const termsOnOwnPage = qs.termsPage && (hasTerms || qs.showSignature);
@@ -182,10 +181,12 @@ function QuotationLetterheadView({ quotation, company, settings }) {
         </tbody>
         {qs.showTotals && (
           <tbody className="qlh-totals">
-            <tr><th colSpan={4}>SUB TOTAL</th><td className="qlh-num">{fmt(num(quotation.subtotal))}</td></tr>
-            {discount > 0 && <tr><th colSpan={4}>DISCOUNT</th><td className="qlh-num">− {fmt(discount)}</td></tr>}
-            {tax > 0 && <tr><th colSpan={4}>GST</th><td className="qlh-num">{fmt(tax)}</td></tr>}
-            <tr className="qlh-grand"><th colSpan={4}>GRAND TOTAL ({cur})</th><td className="qlh-num">{fmt(quotation.total)}</td></tr>
+            <tr><th colSpan={4}>TOTAL</th><td className="qlh-num">{fmt(num(quotation.subtotal))}</td></tr>
+            {discount > 0 && <tr><th colSpan={4}>SPECIAL DISCOUNT</th><td className="qlh-num">− {fmt(discount)}</td></tr>}
+            {discount > 0 && <tr><th colSpan={4}>SUB TOTAL</th><td className="qlh-num">{fmt(num(quotation.subtotal) - discount)}</td></tr>}
+            {gstLines(items, quotation.tax, co.state || stateFromGstin(co.gstNumber), quotation.customerState || stateFromGstin(quotation.customerGst)).map((t) => <tr key={gstLabel(t)}><th colSpan={4}>{gstLabel(t).toUpperCase()}</th><td className="qlh-num">{fmt(t.amount)}</td></tr>)}
+            {num(quotation.roundOff) !== 0 && <tr><th colSpan={4}>ROUND OFF</th><td className="qlh-num">{fmtSigned(quotation.roundOff)}</td></tr>}
+            <tr className="qlh-grand"><th colSpan={4}>NET AMOUNT ({cur})</th><td className="qlh-num">{fmt(quotation.total)}</td></tr>
             <tr className="qlh-words"><td colSpan={5}>Amount in words: <b>{amountInWords(quotation.total)}</b></td></tr>
           </tbody>
         )}

@@ -1,6 +1,6 @@
 // One of a line's two linked discount boxes (% and ₹): typing in either one
 // updates the other. field: 'percent' | 'amount'.
-import { discountAsPercent, lineDiscount, lineGross } from './lineAmounts';
+import { discountAsPercent, discountWithGst, lineDiscount, lineGross, round2 } from './lineAmounts';
 
 function LineDiscountInput({ field, item, onChange, disabled, style }) {
   const gross = lineGross(item);
@@ -8,8 +8,8 @@ function LineDiscountInput({ field, item, onChange, disabled, style }) {
   const active = item.discountMode === field;
   const value = active
     ? (isPercent ? item.discountPercent : item.discountAmount)
-    : (isPercent ? discountAsPercent(lineDiscount(item), gross) : lineDiscount(item));
-  const max = isPercent ? 100 : gross;
+    : (isPercent ? discountAsPercent(lineDiscount(item), gross) : discountWithGst(item));
+  const max = isPercent ? 100 : round2(gross * (1 + (Number(item.taxRate) || 0) / 100)); // the amount is off the price with GST
 
   return (
     <input
@@ -20,7 +20,7 @@ function LineDiscountInput({ field, item, onChange, disabled, style }) {
       style={style}
       disabled={disabled}
       value={value}
-      aria-label={isPercent ? 'Discount percent' : 'Discount amount'}
+      aria-label={isPercent ? 'Discount percent' : 'Discount amount including GST'}
       placeholder={isPercent ? '%' : '₹'}
       onChange={(e) => {
         const raw = e.target.value;

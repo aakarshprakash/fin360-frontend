@@ -66,6 +66,8 @@ export const deleteBill = (id) => api.delete(`/accounting/bills/${id}`);
 export const updateBillStatus = (id, status) => api.patch(`/accounting/bills/${id}/status`, { status });
 export const recordBillPayment = (id, data) => api.post(`/accounting/bills/${id}/payments`, data);
 export const getBillPayments = (id) => api.get(`/accounting/bills/${id}/payments`);
+// Void a payment entered by mistake (reverses its ledger entry)
+export const voidBillPayment = (id, paymentId) => api.delete(`/accounting/bills/${id}/payments/${paymentId}`);
 export const createDebitNote = (data) => api.post('/accounting/debit-notes', data);
 export const getDebitNotes = (params) => api.get('/accounting/debit-notes', { params });
 

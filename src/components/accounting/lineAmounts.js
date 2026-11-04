@@ -11,12 +11,19 @@ const num = (v) => Number(v) || 0;
 
 export const lineGross = (item) => round2(num(item.quantity) * num(item.unitPrice));
 
-// Discount on a line, entered as a percentage or an amount (discountMode says which)
+const gstFactor = (item) => 1 + num(item.taxRate ?? item.tax_rate) / 100;
+
+// Discount on a line (before GST, as saved), entered as a percentage or an
+// amount (discountMode says which). A typed amount is off the price including
+// GST, the way prices are quoted: 2,500 off 6,50,000 gives 6,47,500.
 export function lineDiscount(item) {
   const gross = lineGross(item);
-  if (item.discountMode === 'amount') return Math.min(round2(item.discountAmount), gross);
+  if (item.discountMode === 'amount') return Math.min(round2(round2(item.discountAmount) / gstFactor(item)), gross);
   return round2((gross * Math.min(num(item.discountPercent), 100)) / 100);
 }
+
+// The same discount as an amount off the price including GST
+export const discountWithGst = (item) => round2(lineDiscount(item) * gstFactor(item));
 
 export function lineAmounts(item) {
   const gross = lineGross(item);
@@ -30,15 +37,31 @@ export const NO_DISCOUNT = { discountMode: 'percent', discountPercent: 0, discou
 
 export const discountAsPercent = (discount, gross) => (gross > 0 ? round2((num(discount) / gross) * 100) : 0);
 
-// Lines store the discount as an amount. Back on the form it shows as a
-// percentage when it was a tidy one (28%), otherwise as the amount typed (₹5,000).
+// Lines store the discount as an amount before GST. Back on the form it shows as
+// a percentage when it was a tidy one (28%), otherwise as the amount typed
+// (₹5,000, off the price including GST).
 export function discountFromSaved(item) {
   const saved = round2(item.discount);
   if (saved <= 0) return { ...NO_DISCOUNT };
   const gross = round2(num(item.quantity) * num(item.unitPrice || item.unit_price || item.price));
   const percent = discountAsPercent(saved, gross);
+  const withGst = round2(saved * gstFactor(item));
   if (Math.abs(round2((gross * percent) / 100) - saved) <= 0.01) {
-    return { discountMode: 'percent', discountPercent: percent, discountAmount: saved };
+    return { discountMode: 'percent', discountPercent: percent, discountAmount: withGst };
   }
-  return { discountMode: 'amount', discountPercent: percent, discountAmount: saved };
+  return { discountMode: 'amount', discountPercent: percent, discountAmount: withGst };
+}
+
+// A document's totals. Mirrors LineAmounts::totals() on the server: rounding
+// goes to the nearest rupee and the paise difference is shown as the round
+// off, so total = subtotal - discount + tax + roundOff.
+export function documentTotals(items, roundTotal) {
+  const lines = items.map(lineAmounts);
+  const sum = (key) => round2(lines.reduce((s, l) => s + l[key], 0));
+  const subtotal = sum('gross');
+  const discount = sum('discount');
+  const tax = sum('tax');
+  const exact = round2(subtotal - discount + tax);
+  const total = roundTotal ? Math.round(exact) : exact;
+  return { subtotal, discount, taxable: round2(subtotal - discount), tax, roundOff: round2(total - exact), total };
 }

@@ -3,7 +3,7 @@
 // title, parties, items, totals, terms and signatory. Receives the model built
 // by InvoicePrintView.
 import LetterheadDocument from './LetterheadDocument';
-import { fmt, fmtDateNumeric, fmtQty, fmtRate, gstLabel, num, splitKeyValues } from './invoiceFormat';
+import { fmt, fmtDateNumeric, fmtQty, fmtRate, fmtSigned, gstLabel, num, splitKeyValues } from './invoiceFormat';
 
 function Party({ cu, L, withContact }) {
   return (
@@ -180,6 +180,7 @@ function InvoicePageView({ M }) {
               <tr><th>{M.hasTax ? 'Taxable Amount' : 'Sub Total'}</th><td>{fmt(M.taxableTotal)}</td></tr>
               {M.discount > 0 && <tr><th>Discount</th><td>− {fmt(M.discount)}</td></tr>}
               {M.taxes.map((t) => <tr key={gstLabel(t)}><th>{gstLabel(t)}</th><td>{fmt(t.amount)}</td></tr>)}
+              {num(invoice.roundOff) !== 0 && <tr><th>Round Off</th><td>{fmtSigned(invoice.roundOff)}</td></tr>}
               <tr className="lhp-grand"><th>Total</th><td>{cur} {fmt(invoice.total)}</td></tr>
               {M.amountPaid > 0 && <tr><th>Amount Paid</th><td>{fmt(M.amountPaid)}</td></tr>}
               {M.amountCredited > 0 && <tr><th>Credit Notes</th><td>− {fmt(M.amountCredited)}</td></tr>}

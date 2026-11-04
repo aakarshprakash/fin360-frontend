@@ -8,7 +8,7 @@ import '../../styles/Accounting.css';
 import { ICONS } from '../../components/accounting/AccountingIcons';
 import LineDiscountInput from '../../components/accounting/LineDiscountInput';
 import { GstSelect } from '../../components/accounting/GstInputs';
-import { NO_DISCOUNT, discountAsPercent, discountFromSaved, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
+import { NO_DISCOUNT, discountAsPercent, discountFromSaved, documentTotals, lineAmounts, round2 } from '../../components/accounting/lineAmounts';
 import QuotationPrintView from '../../components/accounting/QuotationPrintView';
 
 // Soft-tint badges matching the app's own design tokens (src/index.css),
@@ -71,25 +71,26 @@ function LineItemsSection({ quotation, setQuotation, quotationId, formatCurrency
   const editSubtotal = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).subtotal, 0));
   const editDiscount = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).discount, 0));
   const editTax = round2(editItems.reduce((s, item) => s + calcEditItemTotal(item).taxAmount, 0));
-  const editTotal = round2(editSubtotal - editDiscount + editTax);
+  const editTotal = documentTotals(editItems, (Number(quotation.roundOff) || 0) !== 0).total;
 
   const saveEdit = async () => {
     setSaving(true);
     try {
       const preparedItems = editItems.map(item => {
         const calc = calcEditItemTotal(item);
-        return { description: item.description, quantity: item.quantity, unitPrice: item.unitPrice, discount: calc.discount, taxRate: item.taxRate, taxAmount: calc.taxAmount, total: calc.total };
+        return { description: item.description, hsnCode: item.hsnCode || null, productId: item.productId || null, quantity: item.quantity, unitPrice: item.unitPrice, discount: calc.discount, taxRate: item.taxRate, taxAmount: calc.taxAmount, total: calc.total };
       });
       const payload = { items: preparedItems, subtotal: editSubtotal, tax: editTax, discount: editDiscount, total: editTotal };
       const response = await updateQuotation(quotationId, payload);
       const raw = response.data?.data || response.data;
       if (raw?.id) { setQuotation(normalizeQuotation(raw)); }
       else { setQuotation({ ...quotation, items: preparedItems.map(it => ({ ...it, price: it.unitPrice, tax: it.taxAmount })), subtotal: editSubtotal, tax: editTax, discount: editDiscount, total: editTotal }); }
-    } catch {
-      const preparedItems = editItems.map(item => { const calc = calcEditItemTotal(item); return { description: item.description, quantity: item.quantity, unitPrice: item.unitPrice, price: item.unitPrice, discount: calc.discount, taxRate: item.taxRate, taxAmount: calc.taxAmount, tax: calc.taxAmount, total: calc.total }; });
-      setQuotation({ ...quotation, items: preparedItems, subtotal: editSubtotal, tax: editTax, discount: editDiscount, total: editTotal });
+      setEditing(false); setEditItems([]);
+    } catch (err) {
+      // Stay in edit mode: nothing was saved
+      alert(err.response?.data?.message || 'Could not save line items. Please try again.');
     }
-    setEditing(false); setEditItems([]); setSaving(false);
+    setSaving(false);
   };
 
   const sectionStyle = { marginBottom: '24px', background: '#fff', borderRadius: '12px', border: '1px solid var(--neutral-200)', overflow: 'hidden' };
@@ -151,6 +152,7 @@ function LineItemsSection({ quotation, setQuotation, quotationId, formatCurrency
           <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Subtotal</span><span style={totalValueStyle}>{formatCurrency(quotation.subtotal)}</span></div>
           {quotation.discount > 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Discount</span><span style={{...totalValueStyle, color: 'var(--error-600)'}}>−{formatCurrency(quotation.discount)}</span></div>}
           {quotation.tax > 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Tax</span><span style={totalValueStyle}>{formatCurrency(quotation.tax)}</span></div>}
+          {(Number(quotation.roundOff) || 0) !== 0 && <div style={totalRowStyle(false)}><span style={totalLabelStyle}>Round off</span><span style={totalValueStyle}>{Number(quotation.roundOff) < 0 ? '−' : ''}{formatCurrency(Math.abs(Number(quotation.roundOff)))}</span></div>}
           <div style={totalRowStyle(true)}><span style={totalLabelStyle}>Total</span><span style={totalValueStyle}>{formatCurrency(quotation.total)}</span></div>
         </div>
       </div>
@@ -340,8 +342,12 @@ ${stylesHTML}
 
   const handleStatusChange = async (newStatus) => {
     setActionLoading(true);
-    try { await updateQuotationStatus(id, newStatus); } catch { /* fallback */ }
-    setQuotation({ ...quotation, status: newStatus });
+    try {
+      await updateQuotationStatus(id, newStatus);
+      setQuotation({ ...quotation, status: newStatus });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not update the status. Please try again.');
+    }
     setActionLoading(false);
   };
 
@@ -353,16 +359,20 @@ ${stylesHTML}
       const pf = res.data?.data?.proforma || res.data?.proforma || res.data?.data || res.data;
       if (pf?.id) { navigate(`/proforma-invoices/${pf.id}`); }
       else { setQuotation({ ...quotation, status: 'converted' }); alert('Converted to proforma invoice successfully.'); }
-    } catch {
-      alert('Convert to proforma invoice API not available yet.');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not convert this quotation. Please try again.');
     }
     setActionLoading(false);
   };
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this quotation?')) {
-      try { await deleteQuotation(id); } catch { /* fallback */ }
-      navigate('/quotations');
+      try {
+        await deleteQuotation(id);
+        navigate('/quotations');
+      } catch (err) {
+        alert(err.response?.data?.message || 'Could not delete this quotation. Please try again.');
+      }
     }
   };
 
