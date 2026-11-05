@@ -6,13 +6,43 @@
 // On screen each sheet shows its own header/footer. In print the header and
 // footer are position:fixed, so Chrome repeats them on every page, and the
 // table's thead/tfoot spacers (also repeated per page) keep content clear of them.
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import { API_ORIGIN } from '../../utils/api';
+import { useFitLevel } from './useFitLevel';
 import { amountInWords, fmt, fmtDateNumeric, fmtQty, fmtSigned, gstLabel, gstLines, num, splitKeyValues, stateFromGstin } from './invoiceFormat';
 import { renderTermsHtml } from './richText';
 import '../../styles/QuotationLetterhead.css';
 
 const src = (path) => `${API_ORIGIN}/storage/${path}`;
+
+const PICTURE_SIZES = ['72mm', '58mm', '48mm', '40mm'];
+const PX_PER_MM = 96 / 25.4;
+const A4_HEIGHT_PX = 297 * PX_PER_MM;
+const SAFETY_PX = 1.5 * PX_PER_MM; // rounding between measuring and printing
+
+// Would print put the totals alone at the top of a new page? They can't split, but
+// everything above them flows from page to page, with the table heading repeated.
+// Works from the screen layout too: head and foot are real there, ghosts in print.
+function totalsStranded(root) {
+  const sheet = root.querySelector('.qlh-sheet');
+  const content = sheet?.querySelector('.qlh-content');
+  const totals = sheet?.querySelector('.qlh-totals');
+  if (!content || !totals) return false;
+
+  const scale = root.getBoundingClientRect().width / root.offsetWidth || 1; // the preview may be zoomed
+  const outer = (a, b) => Math.max(sheet.querySelector(a)?.offsetHeight || 0, sheet.querySelector(b)?.offsetHeight || 0);
+  const usable = A4_HEIGHT_PX - outer('.qlh-head.qlh-screen', '.qlh-flow > thead') - outer('.qlh-foot.qlh-screen', '.qlh-flow > tfoot');
+  const heading = sheet.querySelector('.qlh-items > thead')?.offsetHeight || 0;
+
+  const itemsEnd = (totals.getBoundingClientRect().top - content.getBoundingClientRect().top) / scale;
+  const paddingBottom = parseFloat(root.ownerDocument.defaultView.getComputedStyle(content).paddingBottom) || 0;
+  const needed = totals.getBoundingClientRect().height / scale + paddingBottom + SAFETY_PX;
+
+  if (itemsEnd <= usable) return usable - itemsEnd < needed;
+  const perPage = usable - heading;
+  return perPage - ((itemsEnd - usable) % perPage) < needed;
+}
 
 function CompanyHeader({ co }) {
   const address = (co.address || '').trim();
@@ -121,6 +151,36 @@ function QuotationLetterheadView({ quotation, company, settings }) {
   const hasTerms = (qs.termsHtml || '').trim() || (qs.terms || []).length > 0 || quotation.termsAndConditions;
   const termsOnOwnPage = qs.termsPage && (hasTerms || qs.showSignature);
 
+  // Smaller product pictures, step by step, if the totals would otherwise be left alone on the next page
+  const contentKey = JSON.stringify([quotation.quotationNumber, items, quotation.total, quotation.notes, quotation.customerAddress, qs]);
+  const { level, done, strand, restart } = useFitLevel(contentKey, PICTURE_SIZES.length);
+  const rootRef = useRef(null);
+
+  const measure = useCallback(() => {
+    const root = rootRef.current;
+    if (root && root.querySelector('.qlh-item-img') && totalsStranded(root)) strand();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- strand only changes with contentKey, level and done
+  }, [contentKey, level, done]);
+
+  useLayoutEffect(() => {
+    measure();
+    const root = rootRef.current;
+    if (!root) return undefined;
+    // The print window renders before its stylesheet has loaded, and pictures arrive
+    // late, so measure again on both. Its own window's observer: another's won't fire.
+    const doc = root.ownerDocument;
+    const observer = new doc.defaultView.ResizeObserver(measure);
+    observer.observe(root.querySelector('.qlh-content'));
+    const onSheetLoad = () => { if (!restart()) measure(); };
+    const sheets = [...doc.querySelectorAll('link[rel="stylesheet"]')];
+    sheets.forEach((link) => link.addEventListener('load', onSheetLoad));
+    return () => {
+      observer.disconnect();
+      sheets.forEach((link) => link.removeEventListener('load', onSheetLoad));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restart only matters through measure's level and done
+  }, [measure]);
+
   const body = (
     <>
       <div className="qlh-meta">
@@ -205,7 +265,7 @@ function QuotationLetterheadView({ quotation, company, settings }) {
   );
 
   return (
-    <div className="inv-print qlh-doc">
+    <div className="inv-print qlh-doc" ref={rootRef} style={{ '--qlh-img-max': PICTURE_SIZES[level] }}>
       {/* Edge-to-edge artwork: no browser margins (and so no browser header/footer) */}
       <style>{'@page { size: A4; margin: 0; }'}</style>
       <div className="qlh-head qlh-print-fixed qlh-print-top"><Header qs={qs} co={co} /></div>

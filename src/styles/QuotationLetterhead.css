@@ -214,7 +214,7 @@
 .qlh-item-img {
   display: block;
   max-width: 85%;
-  max-height: 72mm;
+  max-height: var(--qlh-img-max, 72mm);
   margin: 4mm auto 3mm;
   object-fit: contain;
 }
@@ -239,7 +239,7 @@
 
 .qlh-items .qlh-totals th,
 .qlh-items .qlh-totals td {
-  padding: 1.6mm 2mm;
+  padding: 0.9mm 2mm;
   border-top: var(--qlh-rule);
   font-size: 9.5pt;
 }

@@ -16,9 +16,11 @@
 // Fitting: when the block named by `orphanKey` (the totals) would sit alone at the
 // top of a new page, the CSS variable `fitVar` is stepped through `fitLevels` (for
 // instance smaller product pictures) until it fits beside the items, or the last
-// level is reached. If even that doesn't help, the first level is used again.
+// level is reached. If even that doesn't help, the first level is used again
+// (see useFitLevel).
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { API_ORIGIN } from '../../utils/api';
+import { useFitLevel } from './useFitLevel';
 import '../../styles/LetterheadDocument.css';
 
 const SAFETY_PX = 6; // rounding between measuring and rendering
@@ -115,9 +117,7 @@ function LetterheadDocument({ company, blocks, groups = {}, contentKey, showPage
   const side = Number(co.letterheadSide ?? 15);
   const measureRef = useRef(null);
   const [layout, setLayout] = useState(null); // { pages, fills }
-  // Fit level for this content; a new contentKey starts again at the first level
-  const [fit, setFit] = useState({ key: contentKey, level: 0 });
-  const level = fit.key === contentKey ? fit.level : 0;
+  const { level, done, strand, restart } = useFitLevel(contentKey, fitLevels?.length || 0);
   const fitStyle = fitVar && fitLevels ? { [fitVar]: fitLevels[level] } : undefined;
 
   const measure = useCallback(() => {
@@ -132,20 +132,11 @@ function LetterheadDocument({ company, blocks, groups = {}, contentKey, showPage
     // Totals alone on a page of their own: try the next, tighter level
     const orphanAt = orphanKey ? blocks.findIndex((b) => b.key === orphanKey) : -1;
     const pageOfOrphan = orphanAt >= 0 ? pages.findIndex((p) => p.includes(orphanAt)) : -1;
-    if (fitLevels && pageOfOrphan > 0 && pages[pageOfOrphan][0] === orphanAt) {
-      if (level < fitLevels.length - 1) {
-        setFit({ key: contentKey, level: level + 1 });
-        return;
-      }
-      if (level > 0) { // nothing helped: back to the normal size
-        setFit({ key: contentKey, level: 0 });
-        return;
-      }
-    }
+    if (fitLevels && pageOfOrphan > 0 && pages[pageOfOrphan][0] === orphanAt && strand()) return;
     const next = { pages, fills: fillHeights(pages, blocks, heights, headHeights, usable) };
     setLayout((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- blocks are rebuilt each render; contentKey says when they changed
-  }, [contentKey, top, bottom, side, level]);
+  }, [contentKey, top, bottom, side, level, done]);
 
   useLayoutEffect(() => {
     measure();
@@ -157,12 +148,15 @@ function LetterheadDocument({ company, blocks, groups = {}, contentKey, showPage
     const doc = root.ownerDocument;
     const observer = new doc.defaultView.ResizeObserver(measure);
     observer.observe(root.querySelector('.lhd-measure-body'));
+    // Anything decided before a stylesheet arrived was decided on the wrong heights
+    const onSheetLoad = () => { if (!restart()) measure(); };
     const sheets = [...doc.querySelectorAll('link[rel="stylesheet"]')];
-    sheets.forEach((link) => link.addEventListener('load', measure));
+    sheets.forEach((link) => link.addEventListener('load', onSheetLoad));
     return () => {
       observer.disconnect();
-      sheets.forEach((link) => link.removeEventListener('load', measure));
+      sheets.forEach((link) => link.removeEventListener('load', onSheetLoad));
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restart only matters through measure's level and done
   }, [measure]);
 
   const allIndexes = blocks.map((_, i) => i);
