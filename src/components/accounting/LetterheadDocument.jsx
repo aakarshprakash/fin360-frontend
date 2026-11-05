@@ -12,6 +12,11 @@
 //   fill         a table row (node is a function of its height in px) that takes
 //                up the space left on its page, so column rules reach the blocks below
 // groups: { id: { className, cols: ['11mm', null, …], head: <tr/> } }
+//
+// Fitting: when the block named by `orphanKey` (the totals) would sit alone at the
+// top of a new page, the CSS variable `fitVar` is stepped through `fitLevels` (for
+// instance smaller product pictures) until it fits beside the items, or the last
+// level is reached. If even that doesn't help, the first level is used again.
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { API_ORIGIN } from '../../utils/api';
 import '../../styles/LetterheadDocument.css';
@@ -103,13 +108,17 @@ function fillHeights(pages, blocks, heights, headHeights, usable) {
   return fills;
 }
 
-function LetterheadDocument({ company, blocks, groups = {}, contentKey, showPageNumbers, extraClass = '', style }) {
+function LetterheadDocument({ company, blocks, groups = {}, contentKey, showPageNumbers, extraClass = '', style, fitVar, fitLevels, orphanKey }) {
   const co = company || {};
   const top = Number(co.letterheadTop ?? 52);
   const bottom = Number(co.letterheadBottom ?? 35);
   const side = Number(co.letterheadSide ?? 15);
   const measureRef = useRef(null);
   const [layout, setLayout] = useState(null); // { pages, fills }
+  // Fit level for this content; a new contentKey starts again at the first level
+  const [fit, setFit] = useState({ key: contentKey, level: 0 });
+  const level = fit.key === contentKey ? fit.level : 0;
+  const fitStyle = fitVar && fitLevels ? { [fitVar]: fitLevels[level] } : undefined;
 
   const measure = useCallback(() => {
     const root = measureRef.current;
@@ -119,10 +128,24 @@ function LetterheadDocument({ company, blocks, groups = {}, contentKey, showPage
     const headHeights = {};
     root.querySelectorAll('[data-lhd-head]').forEach((h) => { headHeights[h.getAttribute('data-lhd-head')] = h.offsetHeight; });
     const pages = paginate(blocks, heights, headHeights, usable);
+
+    // Totals alone on a page of their own: try the next, tighter level
+    const orphanAt = orphanKey ? blocks.findIndex((b) => b.key === orphanKey) : -1;
+    const pageOfOrphan = orphanAt >= 0 ? pages.findIndex((p) => p.includes(orphanAt)) : -1;
+    if (fitLevels && pageOfOrphan > 0 && pages[pageOfOrphan][0] === orphanAt) {
+      if (level < fitLevels.length - 1) {
+        setFit({ key: contentKey, level: level + 1 });
+        return;
+      }
+      if (level > 0) { // nothing helped: back to the normal size
+        setFit({ key: contentKey, level: 0 });
+        return;
+      }
+    }
     const next = { pages, fills: fillHeights(pages, blocks, heights, headHeights, usable) };
     setLayout((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- blocks are rebuilt each render; contentKey says when they changed
-  }, [contentKey, top, bottom, side]);
+  }, [contentKey, top, bottom, side, level]);
 
   useLayoutEffect(() => {
     measure();
@@ -147,7 +170,7 @@ function LetterheadDocument({ company, blocks, groups = {}, contentKey, showPage
   const contentStyle = { top: `${top}mm`, left: `${side}mm`, right: `${side}mm`, bottom: `${bottom}mm` };
 
   return (
-    <div className={`inv-print lhd-doc ${extraClass}`} style={style}>
+    <div className={`inv-print lhd-doc ${extraClass}`} style={{ ...style, ...fitStyle }}>
       {/* Edge-to-edge letterhead: no browser margins (and so no browser header/footer) */}
       <style>{'@page { size: A4; margin: 0; }'}</style>
 

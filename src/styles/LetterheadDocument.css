@@ -269,7 +269,7 @@
 .lhp-item-img {
   display: block;
   max-width: 85%;
-  max-height: 72mm;
+  max-height: var(--lhp-img-max, 72mm);
   margin: 1.5mm auto;
   object-fit: contain;
 }

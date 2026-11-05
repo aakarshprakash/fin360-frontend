@@ -174,7 +174,9 @@ function QuotationPageView({ quotation, company, settings: qs }) {
 
   const contentKey = JSON.stringify([quotation.quotationNumber, items, quotation.total, quotation.notes, quotation.termsAndConditions, quotation.customer, quotation.customerAddress, qs, co.bankDetails, co.companyName]);
 
-  return <LetterheadDocument company={co} blocks={blocks} groups={groups} contentKey={contentKey} />;
+  // Smaller product pictures, step by step, if the totals would otherwise be left alone on the next page
+  return <LetterheadDocument company={co} blocks={blocks} groups={groups} contentKey={contentKey}
+    fitVar="--lhp-img-max" fitLevels={['72mm', '58mm', '48mm', '40mm']} orphanKey="t-sub" />;
 }
 
 export default QuotationPageView;
