@@ -278,6 +278,8 @@
 .lhp-feature { padding-left: 7mm !important; list-style: disc; font-size: calc(var(--lhp-fs) * 0.95); line-height: 1.3; }
 
 .lhd-table td.lhp-total-label { text-align: right; font-weight: 600; border-right: none; }
+/* Totals rows are tighter than item rows so the whole block fits under the items on one page */
+.lhd-table tr.lhp-total-row td { padding-top: 0.8mm; padding-bottom: 0.8mm; }
 .lhd-table tr.lhp-grand-row td { font-weight: 700; font-size: calc(var(--lhp-fs) * 1.08); background: rgba(15, 61, 110, 0.08); }
 .lhd-table tr.lhp-words-row td { border-right: var(--lhp-rule); }
 

@@ -91,7 +91,7 @@ function QuotationPageView({ quotation, company, settings: qs }) {
     group: 'items',
     keepWithNext,
     node: (
-      <tr className={`lhp-row-first ${className}`}>
+      <tr className={`lhp-row-first lhp-total-row ${className}`}>
         <td colSpan={4} className="lhp-total-label">{label}</td>
         <td className="lhp-num">{value}</td>
       </tr>
@@ -108,7 +108,7 @@ function QuotationPageView({ quotation, company, settings: qs }) {
     {
       key: 't-words',
       group: 'items',
-      node: <tr className="lhp-row-first lhp-words-row"><td colSpan={5}>Amount in words: <b>{amountInWords(quotation.total)}</b></td></tr>,
+      node: <tr className="lhp-row-first lhp-words-row lhp-total-row"><td colSpan={5}>Amount in words: <b>{amountInWords(quotation.total)}</b></td></tr>,
     },
   ].filter(Boolean) : [];
 
