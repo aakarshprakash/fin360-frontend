@@ -106,9 +106,33 @@ export function BoxedParties({ M }) {
   );
 }
 
+// GST rate without the % sign, as the column is headed "Per": 5, 18, 2.5
+const fmtRateBare = (r) => String(Math.round(num(r) * 100) / 100);
+
 export function BoxedItemHead({ M }) {
   const { L, cols } = M;
   const cur = currencyLabel(M);
+  if (cols.split) {
+    return (
+      <>
+        <tr>
+          <th className="bx-c-idx" rowSpan={2}>S.No</th>
+          <th className="bx-c-desc" rowSpan={2}>{L.labels.description || 'Product'}</th>
+          {cols.hsn && <th className="bx-c-hsn" rowSpan={2}>HSN / SAC<br />Code</th>}
+          <th className="bx-c-qty" rowSpan={2}>Qty</th>
+          {cols.uom && <th className="bx-c-uom" rowSpan={2}>UOM</th>}
+          <th className="bx-c-amt" rowSpan={2}>Rate<br />({cur})</th>
+          <th className="bx-c-amt" rowSpan={2}>Total<br />({cur})</th>
+          <th className="bx-c-dis" rowSpan={2}>Dis</th>
+          <th colSpan={2}>GST</th>
+          <th className="bx-c-amt" rowSpan={2}>Total</th>
+        </tr>
+        <tr className="bx-subhead">
+          <th className="bx-c-per">Per</th><th className="bx-c-gst">Amount</th>
+        </tr>
+      </>
+    );
+  }
   return (
     <tr>
       <th className="bx-c-idx">S.No</th>
@@ -130,6 +154,23 @@ export function BoxedItemRow({ M, item, index }) {
   const { cols } = M;
   const rate = num(item.unitPrice || item.price);
   const taxable = num(item.quantity) * rate - num(item.discount);
+  if (cols.split) {
+    return (
+      <tr>
+        <td className="bx-c-idx">{index + 1}</td>
+        <td className="bx-c-desc">{item.description || '—'}</td>
+        {cols.hsn && <td className="bx-c-hsn">{item.hsnCode || item.hsn_code || ''}</td>}
+        <td className="bx-num">{fmtQty(item.quantity)}</td>
+        {cols.uom && <td className="bx-c-uom">{item.unit || ''}</td>}
+        <td className="bx-num">{fmt(rate)}</td>
+        <td className="bx-num">{fmt(num(item.quantity) * rate)}</td>
+        <td className="bx-num">{num(item.discount) > 0 ? fmt(item.discount) : '0'}</td>
+        <td className="bx-num bx-c-per">{num(item.taxAmount) ? fmtRateBare(item.taxRate) : ''}</td>
+        <td className="bx-num">{num(item.taxAmount) ? fmt(item.taxAmount) : ''}</td>
+        <td className="bx-num">{fmt(item.total)}</td>
+      </tr>
+    );
+  }
   return (
     <tr>
       <td className="bx-c-idx">{index + 1}</td>
@@ -143,6 +184,26 @@ export function BoxedItemRow({ M, item, index }) {
       {cols.rate && <td className="bx-num">{num(item.taxRate) ? `${num(item.taxRate)}%` : ''}</td>}
       {cols.gst && <td className="bx-num">{fmt(item.taxAmount)}</td>}
       <td className="bx-num">{fmt(cols.gst ? num(item.total) : taxable)}</td>
+    </tr>
+  );
+}
+
+// GST per item: the TOTAL row at the foot of the item grid
+export function BoxedGridTotalRow({ M }) {
+  const { cols, gridTotals: g } = M;
+  if (!g) return null;
+  return (
+    <tr className="bx-gridtotal">
+      <td className="bx-c-idx" />
+      <td className="bx-gridtotal-label">TOTAL</td>
+      {cols.hsn && <td />}
+      <td className="bx-num">{fmtQty(g.quantity)}</td>
+      {cols.uom && <td />}
+      <td />
+      <td className="bx-num">{fmt(g.gross)}</td>
+      <td className="bx-num">{g.discount > 0 ? fmt(g.discount) : ''}</td>
+      <td /><td className="bx-num">{fmt(g.gst)}</td>
+      <td className="bx-num">{fmt(g.total)}</td>
     </tr>
   );
 }

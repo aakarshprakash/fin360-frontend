@@ -718,6 +718,22 @@
 .bx-c-amt { width: 22mm; }
 .bx-num { text-align: right; white-space: nowrap; }
 
+/* GST per item: more columns, so smaller type and narrower cells */
+.bx-split-table th,
+.bx-split-table td { font-size: calc(var(--inv-fs) * 0.84) !important; padding-left: 0.7mm !important; padding-right: 0.7mm !important; }
+.bx-split-table th,
+.bx-split-table td,
+.bx-split-table .bx-c-idx,
+.bx-split-table .bx-c-hsn,
+.bx-split-table .bx-c-qty,
+.bx-split-table .bx-c-uom,
+.bx-split-table .bx-c-amt { width: auto; }
+.bx-split-table .bx-c-per { text-align: center; }
+.bx-split-table tr.bx-subhead th { font-weight: 600; }
+.bx-split-table tr:first-child th[colspan] { border-bottom: var(--bx-rule, 0.75pt solid #111827); }
+.bx-split-table tr.bx-gridtotal td { border-top: var(--bx-rule, 0.75pt solid #111827); padding-top: 1mm; padding-bottom: 1mm; font-weight: 700; }
+.bx-split-table .bx-gridtotal-label { text-align: center; }
+
 /* Totals */
 .bx-totals th,
 .bx-totals td {

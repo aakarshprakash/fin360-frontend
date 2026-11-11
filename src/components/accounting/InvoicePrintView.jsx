@@ -30,13 +30,36 @@ function buildModel({ invoice, company, paymentMethods, template }) {
   const items = invoice.items || [];
   const hasDiscount = items.some((i) => num(i.discount) > 0);
   const hasTax = items.some((i) => num(i.taxRate) > 0 || num(i.taxAmount) > 0);
+  // "GST per item": Total, Dis and GST (Per, Amount) on every line and a TOTAL row. Ruled designs only
+  const split = hasTax && !!L.columns.gstSplit && ['boxed', 'page-boxed'].includes(L.style.design);
   const cols = {
     hsn: L.columns.hsn,
     uom: L.columns.uom,
-    discount: hasDiscount,
-    taxable: hasTax && L.columns.taxableValue,
-    rate: hasTax && L.columns.gstRate,
-    gst: hasTax && L.columns.gstAmount,
+    discount: hasDiscount || split,
+    taxable: !split && hasTax && L.columns.taxableValue,
+    rate: !split && hasTax && L.columns.gstRate,
+    gst: !split && hasTax && L.columns.gstAmount,
+    gross: split,
+    split,
+  };
+  const sellerState = co.state || stateFromGstin(co.gstNumber);
+  const buyerState = invoice.customerState || stateFromGstin(invoice.customerGst);
+  const gridTotals = split ? {
+    quantity: items.reduce((s, i) => s + num(i.quantity), 0),
+    gross: items.reduce((s, i) => s + num(i.quantity) * num(i.unitPrice || i.price), 0),
+    discount: items.reduce((s, i) => s + num(i.discount), 0),
+    gst: items.reduce((s, i) => s + num(i.taxAmount), 0),
+    total: items.reduce((s, i) => s + num(i.total), 0),
+  } : null;
+  // Plain GST by rate (GST @ 5%, GST @ 18%), adding up to the GST column
+  const gstByRate = () => {
+    const byRate = new Map();
+    items.forEach((i) => {
+      if (!num(i.taxAmount)) return;
+      const rate = num(i.taxRate);
+      byRate.set(rate, (byRate.get(rate) || 0) + num(i.taxAmount));
+    });
+    return [...byRate.entries()].map(([rate, amount]) => ({ name: 'GST', rate, amount: Math.round(amount * 100) / 100 }));
   };
 
   const extra = invoice.extraFields && typeof invoice.extraFields === 'object' ? invoice.extraFields : {};
@@ -69,7 +92,8 @@ function buildModel({ invoice, company, paymentMethods, template }) {
     settled: amountPaid + amountCredited > 0,
     balanceDue: Math.max(0, num(invoice.total) - amountPaid - amountCredited),
     taxableTotal: num(invoice.subtotal) - discount,
-    taxes: gstLines(items, invoice.tax, co.state || stateFromGstin(co.gstNumber), invoice.customerState || stateFromGstin(invoice.customerGst)),
+    taxes: split ? gstByRate() : gstLines(items, invoice.tax, sellerState, buyerState),
+    gridTotals,
     words: amountInWords(invoice.total),
     customer: {
       name: invoice.customer || '—',

@@ -4,14 +4,15 @@
 // invoice carries on to further pages with its headings repeated.
 import LetterheadDocument from './LetterheadDocument';
 import {
-  BoxedDetailsRow, BoxedFieldsRow, BoxedItemHead, BoxedItemRow, BoxedNoteRows, BoxedParties,
+  BoxedDetailsRow, BoxedFieldsRow, BoxedGridTotalRow, BoxedItemHead, BoxedItemRow, BoxedNoteRows, BoxedParties,
   BoxedSignRow, BoxedTitle, BoxedTotalsRow, BoxedWordsRow,
 } from './InvoiceBoxedParts';
+import { splitColumnWidths } from './invoiceFormat';
 
 function InvoiceBoxedPageView({ M }) {
   const { co, L, items, cols } = M;
 
-  const columns = [
+  const columns = cols.split ? splitColumnWidths(cols) : [
     '10mm', null,
     ...(cols.hsn ? ['20mm'] : []),
     '15mm',
@@ -23,7 +24,7 @@ function InvoiceBoxedPageView({ M }) {
     ...(cols.gst ? ['22mm'] : []),
     '22mm',
   ];
-  const groups = { items: { className: 'lhb-items', cols: columns, head: <BoxedItemHead M={M} /> } };
+  const groups = { items: { className: `lhb-items ${cols.split ? 'bx-split-table' : ''}`, cols: columns, head: <BoxedItemHead M={M} /> } };
 
   // The rows from the totals down stay together, so they move as one if they don't fit
   const tail = [
@@ -48,8 +49,10 @@ function InvoiceBoxedPageView({ M }) {
       key: 'fill',
       group: 'items',
       fill: true,
+      keepWithNext: cols.split, // the TOTAL row under it stays on the same page
       node: (height) => <tr className="lhb-fill">{columns.map((_, i) => <td key={i} style={{ height }} />)}</tr>,
     },
+    ...(cols.split ? [{ key: 'gridtotal', group: 'items', keepWithNext: true, node: <BoxedGridTotalRow M={M} /> }] : []),
     ...tail.map(([key, node], i) => ({ key, node, keepWithNext: i < tail.length - 1 })),
   ];
 

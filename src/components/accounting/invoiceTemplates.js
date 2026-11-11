@@ -22,7 +22,7 @@ const LETTERHEAD = {
     sellerGstin: false, placeOfSupply: true, customerGstin: true, customerPan: false,
     contactPerson: false, dueDate: true, shipTo: false,
   },
-  columns: { hsn: true, uom: false, taxableValue: true, gstRate: true, gstAmount: true },
+  columns: { hsn: true, uom: false, taxableValue: true, gstRate: true, gstAmount: true, gstSplit: false },
   sections: {
     amountInWords: true, bankDetails: true, paymentOptions: false, terms: false,
     notes: true, footerMessage: false, computerGenerated: true,
@@ -60,7 +60,7 @@ const CLASSIC = {
     sellerGstin: false, placeOfSupply: false, customerGstin: true, customerPan: true,
     contactPerson: true, dueDate: false, shipTo: true,
   },
-  columns: { hsn: true, uom: true, taxableValue: false, gstRate: false, gstAmount: false },
+  columns: { hsn: true, uom: true, taxableValue: false, gstRate: false, gstAmount: false, gstSplit: false },
   sections: {
     amountInWords: true, bankDetails: true, paymentOptions: false, terms: false,
     notes: true, footerMessage: false, computerGenerated: false,
@@ -89,6 +89,25 @@ const FULLPAGE = {
   style: { design: 'page', accentColor: '#0F3D6E', font: 'clean', textSize: 'normal', tableStyle: 'solid' },
   header: { ...LETTERHEAD.header, title: 'TAX INVOICE' },
   sections: { ...LETTERHEAD.sections, computerGenerated: false },
+};
+
+// The Classic GST grid with GST on every line: Total, Dis, GST (Per, Amount) and
+// the line total, and a TOTAL row under the items
+const GST_PER_ITEM = {
+  ...CLASSIC,
+  columns: { ...CLASSIC.columns, gstSplit: true },
+  labels: {
+    ...CLASSIC.labels, billTo: 'Billing Address', shipTo: 'Shipping Address', description: 'Product',
+    bankDetails: 'Company Bank Details',
+  },
+  texts: {
+    ...CLASSIC.texts,
+    declaration: 'We declare that this Invoice shows the actual price of goods described and that all particulars are true and correct.',
+  },
+  fields: [
+    { id: 'orderno', label: 'Order No', position: 'details' },
+    { id: 'orderdate', label: 'Order Date', position: 'details' },
+  ],
 };
 
 // The Classic GST grid inside the company's full-page letterhead
@@ -121,6 +140,12 @@ export const INVOICE_TEMPLATES = [
     label: 'Full-page letterhead',
     description: 'Prints on your own A4 letterhead (PDF or image), repeated on every page, with text kept clear of its header and footer.',
     layout: FULLPAGE,
+  },
+  {
+    id: 'gstsplit',
+    label: 'GST per item',
+    description: 'Classic GST grid with GST (rate and amount) on every line, a TOTAL row under the items, and order no / date.',
+    layout: GST_PER_ITEM,
   },
   {
     id: 'classicpage',

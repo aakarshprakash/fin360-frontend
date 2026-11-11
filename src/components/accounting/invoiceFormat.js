@@ -69,6 +69,21 @@ export function gstLines(items, invoiceTax, sellerState, buyerState) {
   });
 }
 
+// Column widths of the ruled item grid in the "GST per item" layout. A fixed table
+// takes widths from its first row only, where GST spans two columns (Per, Amount),
+// so these are set on <col>s. null = the product column, which takes the rest.
+export function splitColumnWidths(cols) {
+  return [
+    '8mm', null,
+    ...(cols.hsn ? ['17mm'] : []),
+    '10mm',
+    ...(cols.uom ? ['11mm'] : []),
+    '20mm', '21mm', '11mm',
+    '9mm', '18mm',
+    '22mm',
+  ];
+}
+
 export const gstLabel = (t) => (t.rate == null ? t.name : `${t.name} @ ${fmtRate(t.rate)}`);
 
 const GST_STATE_CODES = {

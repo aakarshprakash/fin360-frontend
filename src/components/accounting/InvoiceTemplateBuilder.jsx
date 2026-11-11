@@ -234,6 +234,8 @@ function InvoiceTemplateBuilder({ template, onChange, company, onCompanyChange, 
           <Toggle label="GST %" checked={L.columns.gstRate} onChange={set('columns', 'gstRate')} />
           <Toggle label="GST amount" checked={L.columns.gstAmount} onChange={set('columns', 'gstAmount')}
             hint="Tax columns only print when the invoice has GST" />
+          <Toggle label="GST per item layout" checked={!!L.columns.gstSplit} onChange={set('columns', 'gstSplit')}
+            hint="Ruled designs: Total, Dis and GST (Per, Amount) on every line, and a TOTAL row. Replaces the taxable value and GST columns above." />
         </Panel>
 
         <Panel title="Totals & payment">
