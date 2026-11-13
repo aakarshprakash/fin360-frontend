@@ -91,7 +91,7 @@ const FULLPAGE = {
   sections: { ...LETTERHEAD.sections, computerGenerated: false },
 };
 
-// The Classic GST grid with GST on every line: Total, Dis, GST (Per, Amount) and
+// The Classic GST grid with GST on every line: Total, Discount, GST (%, Amount) and
 // the line total, and a TOTAL row under the items
 const GST_PER_ITEM = {
   ...CLASSIC,
@@ -114,6 +114,12 @@ const GST_PER_ITEM = {
 const CLASSIC_ON_LETTERHEAD = {
   ...CLASSIC,
   style: { ...CLASSIC.style, design: 'page-boxed', accentColor: '#0F3D6E' },
+};
+
+// GST per item inside the company's full-page letterhead
+const GST_PER_ITEM_ON_LETTERHEAD = {
+  ...GST_PER_ITEM,
+  style: { ...GST_PER_ITEM.style, design: 'page-boxed', accentColor: '#0F3D6E' },
 };
 
 export const INVOICE_TEMPLATES = [
@@ -144,8 +150,14 @@ export const INVOICE_TEMPLATES = [
   {
     id: 'gstsplit',
     label: 'GST per item',
-    description: 'Classic GST grid with GST (rate and amount) on every line, a TOTAL row under the items, and order no / date.',
+    description: 'Classic GST grid with Discount and GST (% and amount) on every line, a TOTAL row under the items, and order no / date.',
     layout: GST_PER_ITEM,
+  },
+  {
+    id: 'gstsplitpage',
+    label: 'GST per item on letterhead',
+    description: 'The GST per item format printed on your own A4 letterhead, with column lines running down to the totals.',
+    layout: GST_PER_ITEM_ON_LETTERHEAD,
   },
   {
     id: 'classicpage',

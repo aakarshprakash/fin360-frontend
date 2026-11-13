@@ -730,6 +730,8 @@
 .bx-split-table .bx-c-amt { width: auto; }
 .bx-split-table .bx-c-per { text-align: center; }
 .bx-split-table tr.bx-subhead th { font-weight: 600; }
+/* The second heading row starts mid-table, so its first cell needs its own left rule */
+.bx-split-table tr.bx-subhead th:first-child { border-left: var(--bx-rule, 0.75pt solid #111827); }
 .bx-split-table tr:first-child th[colspan] { border-bottom: var(--bx-rule, 0.75pt solid #111827); }
 .bx-split-table tr.bx-gridtotal td { border-top: var(--bx-rule, 0.75pt solid #111827); padding-top: 1mm; padding-bottom: 1mm; font-weight: 700; }
 .bx-split-table .bx-gridtotal-label { text-align: center; }

@@ -106,7 +106,7 @@ export function BoxedParties({ M }) {
   );
 }
 
-// GST rate without the % sign, as the column is headed "Per": 5, 18, 2.5
+// GST rate without the % sign, as the column is headed "%": 5, 18, 2.5
 const fmtRateBare = (r) => String(Math.round(num(r) * 100) / 100);
 
 export function BoxedItemHead({ M }) {
@@ -123,12 +123,12 @@ export function BoxedItemHead({ M }) {
           {cols.uom && <th className="bx-c-uom" rowSpan={2}>UOM</th>}
           <th className="bx-c-amt" rowSpan={2}>Rate<br />({cur})</th>
           <th className="bx-c-amt" rowSpan={2}>Total<br />({cur})</th>
-          <th className="bx-c-dis" rowSpan={2}>Dis</th>
+          <th className="bx-c-dis" rowSpan={2}>Discount</th>
           <th colSpan={2}>GST</th>
           <th className="bx-c-amt" rowSpan={2}>Total</th>
         </tr>
         <tr className="bx-subhead">
-          <th className="bx-c-per">Per</th><th className="bx-c-gst">Amount</th>
+          <th className="bx-c-per">%</th><th className="bx-c-gst">Amount</th>
         </tr>
       </>
     );
@@ -232,7 +232,8 @@ export function BoxedTotalsRow({ M }) {
       <div className="bx-cell">
         <table className="bx-totals">
           <tbody>
-            <tr className="bx-strong"><th>Amount ({cur})</th><td>{fmt(M.taxableTotal)}</td></tr>
+            {/* Before discount, so Amount - Discount + GST = Net Total reads straight down */}
+            <tr className="bx-strong"><th>Amount ({cur})</th><td>{fmt(num(invoice.subtotal))}</td></tr>
             {M.discount > 0 && <tr><th>Discount</th><td>− {fmt(M.discount)}</td></tr>}
             {M.taxes.map((t) => (
               <tr key={gstLabel(t)}><th>{gstLabel(t)}</th><td>{fmt(t.amount)}</td></tr>
