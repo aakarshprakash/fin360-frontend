@@ -60,7 +60,8 @@ const CLASSIC = {
     sellerGstin: false, placeOfSupply: false, customerGstin: true, customerPan: true,
     contactPerson: true, dueDate: false, shipTo: true,
   },
-  columns: { hsn: true, uom: true, taxableValue: false, gstRate: false, gstAmount: false, gstSplit: false },
+  // Line Total, Discount and GST (%, Amount) on every line, with a TOTAL row (the GST per item layout)
+  columns: { hsn: true, uom: true, taxableValue: false, gstRate: false, gstAmount: false, gstSplit: true },
   sections: {
     amountInWords: true, bankDetails: true, paymentOptions: false, terms: false,
     notes: true, footerMessage: false, computerGenerated: false,
@@ -138,7 +139,7 @@ export const INVOICE_TEMPLATES = [
   {
     id: 'classic',
     label: 'Classic GST',
-    description: 'Ruled boxes: CIN/GSTIN/PAN, Bill To & Ship To, UOM column, order and dispatch fields, declaration and receiver note.',
+    description: 'Ruled boxes: CIN/GSTIN/PAN, Bill To & Ship To, UOM, Discount and GST % / amount on every line with a TOTAL row, order and dispatch fields, declaration and receiver note.',
     layout: CLASSIC,
   },
   {
@@ -162,7 +163,7 @@ export const INVOICE_TEMPLATES = [
   {
     id: 'classicpage',
     label: 'Classic GST on letterhead',
-    description: 'The Classic GST ruled format printed on your own A4 letterhead, with column lines running down to the totals.',
+    description: 'The Classic GST ruled format (Discount and GST % / amount on every line) printed on your own A4 letterhead, with column lines running down to the totals.',
     layout: CLASSIC_ON_LETTERHEAD,
   },
 ];
